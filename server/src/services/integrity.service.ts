@@ -192,7 +192,7 @@ export class IntegrityService extends BaseService {
     } else {
       const trackedPaths = await this.integrityRepository.getTrackedPaths([path]);
       if (trackedPaths.length === 0) {
-        await this.storageRepository.unlink(path);
+        await this.storageRepository.deleteFile(path);
       }
       await this.integrityRepository.deleteById(id);
     }
@@ -326,7 +326,7 @@ export class IntegrityService extends BaseService {
         }
 
         try {
-          await this.storageRepository.stat(path);
+          await this.storageRepository.getMetadata(path);
           return;
         } catch {
           return reportId;
@@ -399,7 +399,7 @@ export class IntegrityService extends BaseService {
     const results = await Promise.all(
       items.map(async (item) => {
         try {
-          await this.storageRepository.stat(item.path);
+          await this.storageRepository.getMetadata(item.path);
           return { ...item, exists: true };
         } catch {
           return { ...item, exists: false };
@@ -438,7 +438,7 @@ export class IntegrityService extends BaseService {
     const results = await Promise.all(
       paths.map(async ({ reportId, path }) => {
         try {
-          await this.storageRepository.stat(path);
+          await this.storageRepository.getMetadata(path);
           return reportId;
         } catch {
           return;
@@ -714,7 +714,7 @@ export class IntegrityService extends BaseService {
       await Promise.all(
         byPath
           .filter(({ path }) => !trackedPaths.has(path))
-          .map(({ path }) => this.storageRepository.unlink(path).catch(() => void 0)),
+          .map(({ path }) => this.storageRepository.deleteFile(path).catch(() => void 0)),
       );
       await this.integrityRepository.deleteByIds(byPath.map(({ id }) => id));
     }

@@ -17,7 +17,7 @@ describe(ServerService.name, () => {
 
   describe('getStorage', () => {
     it('should return the disk space as B', async () => {
-      mocks.storage.checkDiskUsage.mockResolvedValue({ free: 200, available: 300, total: 500 });
+      mocks.localFilesystem.getDiskUsage.mockResolvedValue({ free: 200, available: 300, total: 500 });
 
       await expect(sut.getStorage()).resolves.toEqual({
         diskAvailable: '300 B',
@@ -29,11 +29,11 @@ describe(ServerService.name, () => {
         diskUseRaw: 300,
       });
 
-      expect(mocks.storage.checkDiskUsage).toHaveBeenCalledWith(expect.stringContaining('/data/library'));
+      expect(mocks.localFilesystem.getDiskUsage).toHaveBeenCalledWith(expect.stringContaining('/data/library'));
     });
 
     it('should return the disk space as KiB', async () => {
-      mocks.storage.checkDiskUsage.mockResolvedValue({ free: 200_000, available: 300_000, total: 500_000 });
+      mocks.localFilesystem.getDiskUsage.mockResolvedValue({ free: 200_000, available: 300_000, total: 500_000 });
 
       await expect(sut.getStorage()).resolves.toEqual({
         diskAvailable: '293.0 KiB',
@@ -45,11 +45,11 @@ describe(ServerService.name, () => {
         diskUseRaw: 300_000,
       });
 
-      expect(mocks.storage.checkDiskUsage).toHaveBeenCalledWith(expect.stringContaining('/data/library'));
+      expect(mocks.localFilesystem.getDiskUsage).toHaveBeenCalledWith(expect.stringContaining('/data/library'));
     });
 
     it('should return the disk space as MiB', async () => {
-      mocks.storage.checkDiskUsage.mockResolvedValue({ free: 200_000_000, available: 300_000_000, total: 500_000_000 });
+      mocks.localFilesystem.getDiskUsage.mockResolvedValue({ free: 200_000_000, available: 300_000_000, total: 500_000_000 });
 
       await expect(sut.getStorage()).resolves.toEqual({
         diskAvailable: '286.1 MiB',
@@ -61,11 +61,11 @@ describe(ServerService.name, () => {
         diskUseRaw: 300_000_000,
       });
 
-      expect(mocks.storage.checkDiskUsage).toHaveBeenCalledWith(expect.stringContaining('/data/library'));
+      expect(mocks.localFilesystem.getDiskUsage).toHaveBeenCalledWith(expect.stringContaining('/data/library'));
     });
 
     it('should return the disk space as GiB', async () => {
-      mocks.storage.checkDiskUsage.mockResolvedValue({
+      mocks.localFilesystem.getDiskUsage.mockResolvedValue({
         free: 200_000_000_000,
         available: 300_000_000_000,
         total: 500_000_000_000,
@@ -81,11 +81,11 @@ describe(ServerService.name, () => {
         diskUseRaw: 300_000_000_000,
       });
 
-      expect(mocks.storage.checkDiskUsage).toHaveBeenCalledWith(expect.stringContaining('/data/library'));
+      expect(mocks.localFilesystem.getDiskUsage).toHaveBeenCalledWith(expect.stringContaining('/data/library'));
     });
 
     it('should return the disk space as TiB', async () => {
-      mocks.storage.checkDiskUsage.mockResolvedValue({
+      mocks.localFilesystem.getDiskUsage.mockResolvedValue({
         free: 200_000_000_000_000,
         available: 300_000_000_000_000,
         total: 500_000_000_000_000,
@@ -101,11 +101,11 @@ describe(ServerService.name, () => {
         diskUseRaw: 300_000_000_000_000,
       });
 
-      expect(mocks.storage.checkDiskUsage).toHaveBeenCalledWith(expect.stringContaining('/data/library'));
+      expect(mocks.localFilesystem.getDiskUsage).toHaveBeenCalledWith(expect.stringContaining('/data/library'));
     });
 
     it('should return the disk space as PiB', async () => {
-      mocks.storage.checkDiskUsage.mockResolvedValue({
+      mocks.localFilesystem.getDiskUsage.mockResolvedValue({
         free: 200_000_000_000_000_000,
         available: 300_000_000_000_000_000,
         total: 500_000_000_000_000_000,
@@ -121,7 +121,7 @@ describe(ServerService.name, () => {
         diskUseRaw: 300_000_000_000_000_000,
       });
 
-      expect(mocks.storage.checkDiskUsage).toHaveBeenCalledWith(expect.stringContaining('/data/library'));
+      expect(mocks.localFilesystem.getDiskUsage).toHaveBeenCalledWith(expect.stringContaining('/data/library'));
     });
   });
 

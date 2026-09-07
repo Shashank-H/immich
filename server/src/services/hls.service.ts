@@ -1,5 +1,4 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { constants } from 'node:fs';
 import { join } from 'node:path';
 import { HLS_SEGMENT_DURATION, HLS_SEGMENT_FILENAME_REGEX, HLS_VARIANTS, HLS_VERSION } from 'src/constants';
 import { StorageCore } from 'src/cores/storage.core';
@@ -108,7 +107,7 @@ export class HlsService extends BaseService {
     const segmentIndex = this.getSegmentIndex(apiSession, filename, initSegment);
     this.websocketRepository.serverSend('HlsHeartbeat', { sessionId, variantIndex, segmentIndex });
 
-    if (await this.storageRepository.checkFileExists(path, constants.R_OK)) {
+    if (await this.storageRepository.exists(path)) {
       return response;
     }
 

@@ -434,7 +434,7 @@ describe(MediaService.name, () => {
 
       await sut.handleGenerateThumbnails({ id: asset.id });
 
-      expect(mocks.storage.mkdirSync).toHaveBeenCalledWith(expect.any(String));
+      expect(mocks.storage.createDirectory).toHaveBeenCalledWith(expect.any(String));
 
       expect(mocks.media.decodeImage).toHaveBeenCalledOnce();
       expect(mocks.media.decodeImage).toHaveBeenCalledWith(asset.originalPath, {
@@ -510,7 +510,7 @@ describe(MediaService.name, () => {
       });
       await sut.handleGenerateThumbnails({ id: asset.id });
 
-      expect(mocks.storage.mkdirSync).toHaveBeenCalledWith(expect.any(String));
+      expect(mocks.storage.createDirectory).toHaveBeenCalledWith(expect.any(String));
       expect(mocks.media.transcode).toHaveBeenCalledWith(
         '/original/path.ext',
         expect.any(String),
@@ -559,7 +559,7 @@ describe(MediaService.name, () => {
       });
       await sut.handleGenerateThumbnails({ id: asset.id });
 
-      expect(mocks.storage.mkdirSync).toHaveBeenCalledWith(expect.any(String));
+      expect(mocks.storage.createDirectory).toHaveBeenCalledWith(expect.any(String));
       expect(mocks.media.transcode).toHaveBeenCalledWith(
         '/original/path.ext',
         expect.any(String),
@@ -707,7 +707,7 @@ describe(MediaService.name, () => {
 
       await sut.handleGenerateThumbnails({ id: asset.id });
 
-      expect(mocks.storage.mkdirSync).toHaveBeenCalledWith(expect.any(String));
+      expect(mocks.storage.createDirectory).toHaveBeenCalledWith(expect.any(String));
       expect(mocks.media.decodeImage).toHaveBeenCalledOnce();
       expect(mocks.media.decodeImage).toHaveBeenCalledWith(asset.originalPath, {
         colorspace: Colorspace.Srgb,
@@ -757,7 +757,7 @@ describe(MediaService.name, () => {
 
       await sut.handleGenerateThumbnails({ id: asset.id });
 
-      expect(mocks.storage.mkdirSync).toHaveBeenCalledWith(expect.any(String));
+      expect(mocks.storage.createDirectory).toHaveBeenCalledWith(expect.any(String));
       expect(mocks.media.decodeImage).toHaveBeenCalledOnce();
       expect(mocks.media.decodeImage).toHaveBeenCalledWith(asset.originalPath, {
         colorspace: Colorspace.Srgb,
@@ -1563,7 +1563,7 @@ describe(MediaService.name, () => {
         ownerId: person.ownerId,
         personGroupId: person.personGroupId,
       });
-      expect(mocks.storage.mkdirSync).toHaveBeenCalledWith(expect.any(String));
+      expect(mocks.storage.createDirectory).toHaveBeenCalledWith(expect.any(String));
       expect(mocks.media.decodeImage).toHaveBeenCalledWith(personThumbnailStub.newThumbnailMiddle.originalPath, {
         colorspace: Colorspace.P3,
         orientation: undefined,
@@ -1617,7 +1617,7 @@ describe(MediaService.name, () => {
         ownerId: person.ownerId,
         personGroupId: person.personGroupId,
       });
-      expect(mocks.storage.mkdirSync).toHaveBeenCalledWith(expect.any(String));
+      expect(mocks.storage.createDirectory).toHaveBeenCalledWith(expect.any(String));
       expect(mocks.media.decodeImage).toHaveBeenCalledWith(expect.any(String), {
         colorspace: Colorspace.P3,
         orientation: undefined,
@@ -2012,7 +2012,7 @@ describe(MediaService.name, () => {
       await sut.handleVideoConversion({ id: 'video-id' });
 
       expect(mocks.systemMetadata.get).toHaveBeenCalled();
-      expect(mocks.storage.mkdirSync).toHaveBeenCalled();
+      expect(mocks.storage.createDirectory).toHaveBeenCalled();
       expect(mocks.media.transcode).toHaveBeenCalledWith(
         '/original/path.ext',
         expect.any(String),
@@ -2031,7 +2031,7 @@ describe(MediaService.name, () => {
       await sut.handleVideoConversion({ id: 'video-id' });
 
       expect(mocks.systemMetadata.get).toHaveBeenCalled();
-      expect(mocks.storage.mkdirSync).toHaveBeenCalled();
+      expect(mocks.storage.createDirectory).toHaveBeenCalled();
       expect(mocks.media.transcode).toHaveBeenCalledWith(
         '/original/path.ext',
         expect.any(String),

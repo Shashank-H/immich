@@ -13,6 +13,7 @@ import {
 import { AssetRepository } from 'src/repositories/asset.repository';
 import { ConfigRepository } from 'src/repositories/config.repository';
 import { CryptoRepository } from 'src/repositories/crypto.repository';
+import { LocalFilesystemRepository } from 'src/repositories/local-filesystem.repository';
 import { LoggingRepository } from 'src/repositories/logging.repository';
 import { MoveRepository } from 'src/repositories/move.repository';
 import { PersonRepository } from 'src/repositories/person.repository';
@@ -59,6 +60,7 @@ export class StorageCore {
     private storageRepository: StorageRepository,
     private systemMetadataRepository: SystemMetadataRepository,
     private logger: LoggingRepository,
+    private localFilesystemRepository: LocalFilesystemRepository,
   ) {
     this.logger.setContext(StorageCore.name);
   }
@@ -72,6 +74,7 @@ export class StorageCore {
     storageRepository: StorageRepository,
     systemMetadataRepository: SystemMetadataRepository,
     logger: LoggingRepository,
+    localFilesystemRepository: LocalFilesystemRepository,
   ) {
     if (!instance) {
       instance = new StorageCore(
@@ -83,6 +86,7 @@ export class StorageCore {
         storageRepository,
         systemMetadataRepository,
         logger,
+        localFilesystemRepository,
       );
     }
 
@@ -201,13 +205,13 @@ export class StorageCore {
       return;
     }
 
-    this.ensureFolders(newPath);
+    await this.ensureFolders(newPath);
 
     let move = await this.moveRepository.getByEntity(entityId, pathType);
     if (move) {
       this.logger.log(`Attempting to finish incomplete move: ${move.oldPath} => ${move.newPath}`);
-      const isOldPathExists = await this.storageRepository.checkFileExists(move.oldPath);
-      const isNewPathExists = await this.storageRepository.checkFileExists(move.newPath);
+      const isOldPathExists = await this.storageRepository.exists(move.oldPath);
+      const isNewPathExists = await this.storageRepository.exists(move.newPath);
       const newPathCheck = isNewPathExists ? move.newPath : null;
       const actualPath = isOldPathExists ? move.oldPath : newPathCheck;
       if (!actualPath) {
@@ -240,32 +244,11 @@ export class StorageCore {
 
     if (move.oldPath !== newPath) {
       try {
-        this.logger.debug(`Attempting to rename file: ${move.oldPath} => ${newPath}`);
-        await this.storageRepository.rename(move.oldPath, newPath);
-      } catch (error: any) {
-        if (error.code !== 'EXDEV') {
-          this.logger.warn(
-            `Unable to complete move. Error renaming file with code ${error.code} and message: ${error.message}`,
-          );
-          return;
-        }
-        this.logger.debug(`Unable to rename file. Falling back to copy, verify and delete`);
-        await this.storageRepository.copyFile(move.oldPath, newPath);
-
-        if (!(await this.verifyNewPathContentsMatchesExpected(move.oldPath, newPath, assetInfo))) {
-          this.logger.warn(`Skipping move due to file size mismatch`);
-          await this.storageRepository.unlink(newPath);
-          return;
-        }
-
-        const { atime, mtime } = await this.storageRepository.stat(move.oldPath);
-        await this.storageRepository.utimes(newPath, atime, mtime);
-
-        try {
-          await this.storageRepository.unlink(move.oldPath);
-        } catch (error: any) {
-          this.logger.warn(`Unable to delete old file, it will now no longer be tracked by Immich: ${error.message}`);
-        }
+        this.logger.debug(`Publishing file: ${move.oldPath} => ${newPath}`);
+        await this.storageRepository.publish(move.oldPath, newPath);
+      } catch (error) {
+        this.logger.warn(`Unable to publish file: ${error}`);
+        return;
       }
     }
 
@@ -278,8 +261,8 @@ export class StorageCore {
     newPath: string,
     assetInfo?: { sizeInBytes: number; checksum: Buffer },
   ) {
-    const oldStat = await this.storageRepository.stat(oldPath);
-    const newStat = await this.storageRepository.stat(newPath);
+    const oldStat = await this.storageRepository.getMetadata(oldPath);
+    const newStat = await this.storageRepository.getMetadata(newPath);
     const oldPathSize = assetInfo ? assetInfo.sizeInBytes : oldStat.size;
     const newPathSize = newStat.size;
     this.logger.debug(`File size check: ${newPathSize} === ${oldPathSize}`);
@@ -310,7 +293,7 @@ export class StorageCore {
   }
 
   ensureFolders(input: string) {
-    this.storageRepository.mkdirSync(dirname(input));
+    return this.storageRepository.createDirectory(dirname(input));
   }
 
   removeEmptyDirs(folder: StorageFolder) {
@@ -363,7 +346,7 @@ export class StorageCore {
 
   private async getDevices() {
     try {
-      return await this.storageRepository.readdir('/dev/dri');
+      return await this.localFilesystemRepository.getVideoDevices();
     } catch {
       this.logger.debug('No devices found in /dev/dri.');
       return [];
@@ -372,11 +355,7 @@ export class StorageCore {
 
   private async hasMaliOpenCL() {
     try {
-      const [maliIcdStat, maliDeviceStat] = await Promise.all([
-        this.storageRepository.stat('/etc/OpenCL/vendors/mali.icd'),
-        this.storageRepository.stat('/dev/mali0'),
-      ]);
-      return maliIcdStat.isFile() && maliDeviceStat.isCharacterDevice();
+      return await this.localFilesystemRepository.hasMaliOpenCL();
     } catch {
       this.logger.debug('OpenCL not available for transcoding, so RKMPP acceleration will use CPU tonemapping');
       return false;

@@ -102,60 +102,60 @@ describe(DatabaseBackupService.name, () => {
   describe('cleanupDatabaseBackups', () => {
     it('should do nothing if not reached keepLastAmount', async () => {
       mocks.systemMetadata.get.mockResolvedValue(systemConfigStub.backupEnabled);
-      mocks.storage.readdir.mockResolvedValue(['immich-db-backup-1.sql.gz']);
+      mocks.storage.list.mockResolvedValue(['immich-db-backup-1.sql.gz']);
       await sut.cleanupDatabaseBackups();
-      expect(mocks.storage.unlink).not.toHaveBeenCalled();
+      expect(mocks.storage.deleteFile).not.toHaveBeenCalled();
     });
 
     it('should remove failed backup files', async () => {
       mocks.systemMetadata.get.mockResolvedValue(systemConfigStub.backupEnabled);
       //`immich-db-backup-${DateTime.now().toFormat("yyyyLLdd'T'HHmmss")}-v${serverVersion.toString()}-pg${databaseVersion.split(' ')[0]}.sql.gz.tmp`,
-      mocks.storage.readdir.mockResolvedValue([
+      mocks.storage.list.mockResolvedValue([
         'immich-db-backup-123.sql.gz.tmp',
         `immich-db-backup-${DateTime.fromISO('2025-07-25T11:02:16Z').toFormat("yyyyLLdd'T'HHmmss")}-v1.234.5-pg14.5.sql.gz.tmp`,
         `immich-db-backup-${DateTime.fromISO('2025-07-27T11:01:16Z').toFormat("yyyyLLdd'T'HHmmss")}-v1.234.5-pg14.5.sql.gz`,
         `immich-db-backup-${DateTime.fromISO('2025-07-29T11:01:16Z').toFormat("yyyyLLdd'T'HHmmss")}-v1.234.5-pg14.5.sql.gz.tmp`,
       ]);
       await sut.cleanupDatabaseBackups();
-      expect(mocks.storage.unlink).toHaveBeenCalledTimes(3);
-      expect(mocks.storage.unlink).toHaveBeenCalledWith(
+      expect(mocks.storage.deleteFile).toHaveBeenCalledTimes(3);
+      expect(mocks.storage.deleteFile).toHaveBeenCalledWith(
         `${StorageCore.getBaseFolder(StorageFolder.Backups)}/immich-db-backup-123.sql.gz.tmp`,
       );
-      expect(mocks.storage.unlink).toHaveBeenCalledWith(
+      expect(mocks.storage.deleteFile).toHaveBeenCalledWith(
         `${StorageCore.getBaseFolder(StorageFolder.Backups)}/immich-db-backup-20250725T110216-v1.234.5-pg14.5.sql.gz.tmp`,
       );
-      expect(mocks.storage.unlink).toHaveBeenCalledWith(
+      expect(mocks.storage.deleteFile).toHaveBeenCalledWith(
         `${StorageCore.getBaseFolder(StorageFolder.Backups)}/immich-db-backup-20250729T110116-v1.234.5-pg14.5.sql.gz.tmp`,
       );
     });
 
     it('should remove old backup files over keepLastAmount', async () => {
       mocks.systemMetadata.get.mockResolvedValue(systemConfigStub.backupEnabled);
-      mocks.storage.readdir.mockResolvedValue(['immich-db-backup-1.sql.gz', 'immich-db-backup-2.sql.gz']);
+      mocks.storage.list.mockResolvedValue(['immich-db-backup-1.sql.gz', 'immich-db-backup-2.sql.gz']);
       await sut.cleanupDatabaseBackups();
-      expect(mocks.storage.unlink).toHaveBeenCalledTimes(1);
-      expect(mocks.storage.unlink).toHaveBeenCalledWith(
+      expect(mocks.storage.deleteFile).toHaveBeenCalledTimes(1);
+      expect(mocks.storage.deleteFile).toHaveBeenCalledWith(
         `${StorageCore.getBaseFolder(StorageFolder.Backups)}/immich-db-backup-1.sql.gz`,
       );
     });
 
     it('should remove old backup files over keepLastAmount and failed backups', async () => {
       mocks.systemMetadata.get.mockResolvedValue(systemConfigStub.backupEnabled);
-      mocks.storage.readdir.mockResolvedValue([
+      mocks.storage.list.mockResolvedValue([
         `immich-db-backup-${DateTime.fromISO('2025-07-25T11:02:16Z').toFormat("yyyyLLdd'T'HHmmss")}-v1.234.5-pg14.5.sql.gz.tmp`,
         `immich-db-backup-${DateTime.fromISO('2025-07-27T11:01:16Z').toFormat("yyyyLLdd'T'HHmmss")}-v1.234.5-pg14.5.sql.gz`,
         'immich-db-backup-1753789649000.sql.gz',
         `immich-db-backup-${DateTime.fromISO('2025-07-29T11:01:16Z').toFormat("yyyyLLdd'T'HHmmss")}-v1.234.5-pg14.5.sql.gz`,
       ]);
       await sut.cleanupDatabaseBackups();
-      expect(mocks.storage.unlink).toHaveBeenCalledTimes(3);
-      expect(mocks.storage.unlink).toHaveBeenCalledWith(
+      expect(mocks.storage.deleteFile).toHaveBeenCalledTimes(3);
+      expect(mocks.storage.deleteFile).toHaveBeenCalledWith(
         `${StorageCore.getBaseFolder(StorageFolder.Backups)}/immich-db-backup-1753789649000.sql.gz`,
       );
-      expect(mocks.storage.unlink).toHaveBeenCalledWith(
+      expect(mocks.storage.deleteFile).toHaveBeenCalledWith(
         `${StorageCore.getBaseFolder(StorageFolder.Backups)}/immich-db-backup-20250725T110216-v1.234.5-pg14.5.sql.gz.tmp`,
       );
-      expect(mocks.storage.unlink).toHaveBeenCalledWith(
+      expect(mocks.storage.deleteFile).toHaveBeenCalledWith(
         `${StorageCore.getBaseFolder(StorageFolder.Backups)}/immich-db-backup-20250727T110116-v1.234.5-pg14.5.sql.gz`,
       );
     });
@@ -163,11 +163,11 @@ describe(DatabaseBackupService.name, () => {
 
   describe('handleBackupDatabase / createDatabaseBackup', () => {
     beforeEach(() => {
-      mocks.storage.readdir.mockResolvedValue([]);
+      mocks.storage.list.mockResolvedValue([]);
       mocks.process.spawn.mockReturnValue(mockSpawn(0, 'data', ''));
       mocks.process.spawnDuplexStream.mockImplementation(() => mockDuplex()('command', 0, 'data', ''));
-      mocks.storage.rename.mockResolvedValue();
-      mocks.storage.unlink.mockResolvedValue();
+      mocks.storage.publish.mockResolvedValue();
+      mocks.storage.deleteFile.mockResolvedValue();
       mocks.systemMetadata.get.mockResolvedValue(systemConfigStub.backupEnabled);
       mocks.storage.createWriteStream.mockReturnValue(new PassThrough());
     });
@@ -194,10 +194,10 @@ describe(DatabaseBackupService.name, () => {
         void 0 as never,
       );
 
-      mocks.storage.readdir.mockResolvedValue([]);
+      mocks.storage.list.mockResolvedValue([]);
       mocks.process.spawnDuplexStream.mockImplementation(() => mockDuplex()('command', 0, 'data', ''));
-      mocks.storage.rename.mockResolvedValue();
-      mocks.storage.unlink.mockResolvedValue();
+      mocks.storage.publish.mockResolvedValue();
+      mocks.storage.deleteFile.mockResolvedValue();
       mocks.systemMetadata.get.mockResolvedValue(systemConfigStub.backupEnabled);
       mocks.storage.createWriteStream.mockReturnValue(new PassThrough());
       mocks.database.getPostgresVersion.mockResolvedValue('14.10');
@@ -225,7 +225,7 @@ describe(DatabaseBackupService.name, () => {
     it('should rename file on success', async () => {
       const result = await sut.handleBackupDatabase();
       expect(result).toBe(JobStatus.Success);
-      expect(mocks.storage.rename).toHaveBeenCalled();
+      expect(mocks.storage.publish).toHaveBeenCalled();
     });
 
     it('should fail if pg_dump fails', async () => {
@@ -236,7 +236,7 @@ describe(DatabaseBackupService.name, () => {
     it('should not rename file if pgdump fails and gzip succeeds', async () => {
       mocks.process.spawnDuplexStream.mockReturnValueOnce(mockDuplex()('pg_dump', 1, '', 'error'));
       await expect(sut.handleBackupDatabase()).rejects.toThrow('pg_dump non-zero exit code (1)');
-      expect(mocks.storage.rename).not.toHaveBeenCalled();
+      expect(mocks.storage.publish).not.toHaveBeenCalled();
     });
 
     it('should fail if gzip fails', async () => {
@@ -272,15 +272,15 @@ describe(DatabaseBackupService.name, () => {
     });
 
     it('should fail if rename fails', async () => {
-      mocks.storage.rename.mockRejectedValue(new Error('error'));
+      mocks.storage.publish.mockRejectedValue(new Error('error'));
       await expect(sut.handleBackupDatabase()).rejects.toThrow('error');
     });
 
     it('should ignore unlink failing and still return failed job status', async () => {
       mocks.process.spawnDuplexStream.mockReturnValueOnce(mockDuplex()('pg_dump', 1, '', 'error'));
-      mocks.storage.unlink.mockRejectedValue(new Error('error'));
+      mocks.storage.deleteFile.mockRejectedValue(new Error('error'));
       await expect(sut.handleBackupDatabase()).rejects.toThrow('pg_dump non-zero exit code (1)');
-      expect(mocks.storage.unlink).toHaveBeenCalled();
+      expect(mocks.storage.deleteFile).toHaveBeenCalled();
     });
 
     it.each`
@@ -657,13 +657,13 @@ describe(DatabaseBackupService.name, () => {
 
   describe('listBackups', () => {
     it('should give us all backups', async () => {
-      mocks.storage.readdir.mockResolvedValue([
+      mocks.storage.list.mockResolvedValue([
         `immich-db-backup-${DateTime.fromISO('2025-07-25T11:02:16Z').toFormat("yyyyLLdd'T'HHmmss")}-v1.234.5-pg14.5.sql.gz.tmp`,
         `immich-db-backup-${DateTime.fromISO('2025-07-27T11:01:16Z').toFormat("yyyyLLdd'T'HHmmss")}-v1.234.5-pg14.5.sql.gz`,
         'immich-db-backup-1753789649000.sql.gz',
         `immich-db-backup-${DateTime.fromISO('2025-07-29T11:01:16Z').toFormat("yyyyLLdd'T'HHmmss")}-v1.234.5-pg14.5.sql.gz`,
       ]);
-      mocks.storage.stat.mockResolvedValue({ size: 1024 } as any);
+      mocks.storage.getMetadata.mockResolvedValue({ size: 1024 } as any);
 
       await expect(sut.listBackups()).resolves.toMatchObject({
         backups: [
@@ -684,8 +684,8 @@ describe(DatabaseBackupService.name, () => {
 
     it('should unlink the target file', async () => {
       await sut.deleteBackup(['filename.sql']);
-      expect(mocks.storage.unlink).toHaveBeenCalledTimes(1);
-      expect(mocks.storage.unlink).toHaveBeenCalledWith(
+      expect(mocks.storage.deleteFile).toHaveBeenCalledTimes(1);
+      expect(mocks.storage.deleteFile).toHaveBeenCalledWith(
         `${StorageCore.getBaseFolder(StorageFolder.Backups)}/filename.sql`,
       );
     });
@@ -693,12 +693,12 @@ describe(DatabaseBackupService.name, () => {
 
   describe('restoreDatabaseBackup', () => {
     beforeEach(() => {
-      mocks.storage.readdir.mockResolvedValue([]);
+      mocks.storage.list.mockResolvedValue([]);
       mocks.process.spawn.mockReturnValue(mockSpawn(0, 'data', ''));
       mocks.process.spawnDuplexStream.mockImplementation(() => mockDuplex()('command', 0, 'data', ''));
       mocks.process.fork.mockImplementation(() => mockSpawn(0, 'Immich Server is listening', ''));
-      mocks.storage.rename.mockResolvedValue();
-      mocks.storage.unlink.mockResolvedValue();
+      mocks.storage.publish.mockResolvedValue();
+      mocks.storage.deleteFile.mockResolvedValue();
       mocks.storage.createPlainReadStream.mockReturnValue(Readable.from(mockData()));
       mocks.storage.createWriteStream.mockReturnValue(new PassThrough());
       mocks.storage.createGzip.mockReturnValue(new PassThrough());

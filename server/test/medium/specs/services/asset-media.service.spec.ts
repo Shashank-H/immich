@@ -39,7 +39,7 @@ describe(AssetService.name, () => {
     it('should work', async () => {
       const { sut, ctx } = setup();
 
-      ctx.getMock(StorageRepository).utimes.mockResolvedValue();
+      ctx.getMock(StorageRepository).setFileTimes.mockResolvedValue();
       ctx.getMock(EventRepository).emit.mockResolvedValue();
       ctx.getMock(JobRepository).queue.mockResolvedValue();
 
@@ -74,7 +74,7 @@ describe(AssetService.name, () => {
     it('should work with an empty metadata list', async () => {
       const { sut, ctx } = setup();
 
-      ctx.getMock(StorageRepository).utimes.mockResolvedValue();
+      ctx.getMock(StorageRepository).setFileTimes.mockResolvedValue();
       ctx.getMock(EventRepository).emit.mockResolvedValue();
       ctx.getMock(JobRepository).queue.mockResolvedValue();
 
@@ -106,7 +106,7 @@ describe(AssetService.name, () => {
 
       const sharedLinkRepo = ctx.get(SharedLinkRepository);
 
-      ctx.getMock(StorageRepository).utimes.mockResolvedValue();
+      ctx.getMock(StorageRepository).setFileTimes.mockResolvedValue();
       ctx.getMock(EventRepository).emit.mockResolvedValue();
       ctx.getMock(JobRepository).queue.mockResolvedValue();
 
@@ -141,7 +141,7 @@ describe(AssetService.name, () => {
     it('should handle adding a duplicate asset to a shared link', async () => {
       const { sut, ctx } = setup();
 
-      ctx.getMock(StorageRepository).utimes.mockResolvedValue();
+      ctx.getMock(StorageRepository).setFileTimes.mockResolvedValue();
       ctx.getMock(EventRepository).emit.mockResolvedValue();
       ctx.getMock(JobRepository).queue.mockResolvedValue();
 
@@ -182,7 +182,7 @@ describe(AssetService.name, () => {
 
       const sharedLinkRepo = ctx.get(SharedLinkRepository);
 
-      ctx.getMock(StorageRepository).utimes.mockResolvedValue();
+      ctx.getMock(StorageRepository).setFileTimes.mockResolvedValue();
       ctx.getMock(EventRepository).emit.mockResolvedValue();
       ctx.getMock(JobRepository).queue.mockResolvedValue();
 
@@ -226,7 +226,7 @@ describe(AssetService.name, () => {
 
       const sharedLinkRepo = ctx.get(SharedLinkRepository);
 
-      ctx.getMock(StorageRepository).utimes.mockResolvedValue();
+      ctx.getMock(StorageRepository).setFileTimes.mockResolvedValue();
       ctx.getMock(EventRepository).emit.mockResolvedValue();
       ctx.getMock(JobRepository).queue.mockResolvedValue();
 

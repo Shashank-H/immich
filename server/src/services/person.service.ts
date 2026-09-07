@@ -267,7 +267,7 @@ export class PersonService extends BaseService {
     }
 
     const people = await this.personRepository.delete(groupIds, ownerId);
-    await Promise.all(people.map((person) => this.storageRepository.unlink(person.thumbnailPath)));
+    await Promise.all(people.map((person) => this.storageRepository.deleteFile(person.thumbnailPath)));
     await this.personRepository.deleteEmptyGroups();
     this.logger.debug(`Deleted ${groupIds.length} people`);
   }

@@ -47,6 +47,7 @@ describe(MaintenanceWorkerService.name, () => {
       maintenanceWebsocketRepositoryMock,
       maintenanceHealthRepositoryMock,
       mocks.storage as never,
+      mocks.localFilesystem,
       mocks.process,
       mocks.database as never,
       databaseBackupServiceMock,
@@ -185,7 +186,7 @@ describe(MaintenanceWorkerService.name, () => {
 
   describe('detectPriorInstall', () => {
     it('generate report about prior installation', async () => {
-      mocks.storage.readdir.mockResolvedValue(['.immich', 'file1', 'file2']);
+      mocks.storage.list.mockResolvedValue(['.immich', 'file1', 'file2']);
       mocks.storage.readFile.mockResolvedValue(undefined as never);
       mocks.storage.overwriteFile.mockRejectedValue(undefined as never);
 

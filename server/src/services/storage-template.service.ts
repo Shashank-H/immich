@@ -372,7 +372,7 @@ export class StorageTemplateService extends BaseService {
       let duplicateCount = 0;
 
       while (true) {
-        const isExists = await this.storageRepository.checkFileExists(destination);
+        const isExists = await this.storageRepository.exists(destination);
         if (!isExists) {
           break;
         }

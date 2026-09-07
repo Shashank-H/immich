@@ -101,7 +101,7 @@ export class AssetMediaService extends BaseService {
     return sanitize(`${file.uuid}${lookup[fieldName]}`);
   }
 
-  getUploadFolder({ auth, fieldName, file }: UploadRequest): string {
+  async getUploadFolder({ auth, fieldName, file }: UploadRequest): Promise<string> {
     auth = requireUploadAccess(auth);
 
     let folder = StorageCore.getNestedFolder(StorageFolder.Upload, auth.user.id, file.uuid);
@@ -109,14 +109,14 @@ export class AssetMediaService extends BaseService {
       folder = StorageCore.getFolderLocation(StorageFolder.Profile, auth.user.id);
     }
 
-    this.storageRepository.mkdirSync(folder);
+    await this.storageRepository.createDirectory(folder);
 
     return folder;
   }
 
   async onUploadError(request: AuthRequest, file: Express.Multer.File) {
     const uploadFilename = this.getUploadFilename(asUploadRequest(request, file));
-    const uploadFolder = this.getUploadFolder(asUploadRequest(request, file));
+    const uploadFolder = await this.getUploadFolder(asUploadRequest(request, file));
     const uploadPath = `${uploadFolder}/${uploadFilename}`;
 
     await this.jobRepository.queue({ name: JobName.FileDelete, data: { files: [uploadPath] } });
@@ -176,9 +176,9 @@ export class AssetMediaService extends BaseService {
           path: sidecarFile.originalPath,
           type: AssetFileType.Sidecar,
         });
-        await this.storageRepository.utimes(sidecarFile.originalPath, new Date(), new Date(dto.fileModifiedAt));
+        await this.storageRepository.setFileTimes(sidecarFile.originalPath, new Date(), new Date(dto.fileModifiedAt));
       }
-      await this.storageRepository.utimes(file.originalPath, new Date(), new Date(dto.fileModifiedAt));
+      await this.storageRepository.setFileTimes(file.originalPath, new Date(), new Date(dto.fileModifiedAt));
       await this.assetRepository.upsertExif({
         exif: { assetId: asset.id, fileSizeInByte: file.size },
         lockedPropertiesBehavior: 'override',

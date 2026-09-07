@@ -605,7 +605,7 @@ describe(PersonService.name, () => {
 
       expect(mocks.person.delete).toHaveBeenCalledWith([person.personGroupId], undefined);
       expect(mocks.person.deleteEmptyGroups).toHaveBeenCalledWith();
-      expect(mocks.storage.unlink).toHaveBeenCalledWith(person.thumbnailPath);
+      expect(mocks.storage.deleteFile).toHaveBeenCalledWith(person.thumbnailPath);
     });
   });
 
@@ -649,7 +649,7 @@ describe(PersonService.name, () => {
       expect(mocks.person.delete).toHaveBeenCalledWith([person.personGroupId], undefined);
       expect(mocks.person.deleteEmptyGroups).toHaveBeenCalledWith();
       expect(mocks.person.vacuum).toHaveBeenCalledWith({ reindexVectors: true });
-      expect(mocks.storage.unlink).toHaveBeenCalledWith(person.thumbnailPath);
+      expect(mocks.storage.deleteFile).toHaveBeenCalledWith(person.thumbnailPath);
       expect(mocks.assetJob.streamForDetectFacesJob).toHaveBeenCalledWith(true);
       expect(mocks.job.queueAll).toHaveBeenCalledWith([
         {
@@ -668,7 +668,7 @@ describe(PersonService.name, () => {
       expect(mocks.person.deleteGroups).not.toHaveBeenCalled();
       expect(mocks.person.deleteFaces).not.toHaveBeenCalled();
       expect(mocks.person.vacuum).not.toHaveBeenCalled();
-      expect(mocks.storage.unlink).not.toHaveBeenCalled();
+      expect(mocks.storage.deleteFile).not.toHaveBeenCalled();
       expect(mocks.assetJob.streamForDetectFacesJob).toHaveBeenCalledWith(undefined);
       expect(mocks.job.queueAll).toHaveBeenCalledWith([
         {
@@ -702,7 +702,7 @@ describe(PersonService.name, () => {
       ]);
       expect(mocks.person.delete).toHaveBeenCalledWith([person.personGroupId], undefined);
       expect(mocks.person.deleteEmptyGroups).toHaveBeenCalledWith();
-      expect(mocks.storage.unlink).toHaveBeenCalledWith(person.thumbnailPath);
+      expect(mocks.storage.deleteFile).toHaveBeenCalledWith(person.thumbnailPath);
       expect(mocks.person.vacuum).toHaveBeenCalledWith({ reindexVectors: true });
     });
   });
@@ -885,7 +885,7 @@ describe(PersonService.name, () => {
       ]);
       expect(mocks.person.delete).toHaveBeenCalledWith([person.personGroupId], undefined);
       expect(mocks.person.deleteEmptyGroups).toHaveBeenCalledWith();
-      expect(mocks.storage.unlink).toHaveBeenCalledWith(person.thumbnailPath);
+      expect(mocks.storage.deleteFile).toHaveBeenCalledWith(person.thumbnailPath);
       expect(mocks.person.vacuum).toHaveBeenCalledWith({ reindexVectors: false });
     });
   });

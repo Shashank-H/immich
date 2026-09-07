@@ -21,7 +21,7 @@ export const generateProfileImage = async (
     StorageCore.getFolderLocation(StorageFolder.Profile, userId),
     `${crypto.randomUUID()}.${image.thumbnail.format}`,
   );
-  storageCore.ensureFolders(outputPath);
+  await storageCore.ensureFolders(outputPath);
 
   await media.generateThumbnail(
     input,

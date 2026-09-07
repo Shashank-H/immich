@@ -1,5 +1,4 @@
 import { BadRequestException } from '@nestjs/common';
-import { Stats } from 'node:fs';
 import { JOBS_LIBRARY_PAGINATION_SIZE } from 'src/constants';
 import { defaults, SystemConfig } from 'src/dtos/config.dto';
 import { mapLibrary } from 'src/dtos/library.dto';
@@ -167,8 +166,8 @@ describe(LibraryService.name, () => {
 
       mocks.library.get.mockResolvedValue(library);
       mocks.storage.walk.mockImplementation(mockWalk);
-      mocks.storage.stat.mockResolvedValue({ isDirectory: () => true } as Stats);
-      mocks.storage.checkFileExists.mockResolvedValue(true);
+      mocks.storage.getMetadata.mockResolvedValue({ type: 'directory' } as any);
+      mocks.storage.exists.mockResolvedValue(true);
       mocks.asset.filterNewExternalAssetPaths.mockResolvedValue(['/data/user1/photo.jpg']);
 
       await sut.handleQueueSyncFiles({ id: library.id });
@@ -191,17 +190,17 @@ describe(LibraryService.name, () => {
 
     it('should ignore import paths that do not exist', async () => {
       const library = factory.library({ importPaths: ['/foo', '/bar'] });
-      mocks.storage.stat.mockImplementation((path): Promise<Stats> => {
+      mocks.storage.getMetadata.mockImplementation((path): Promise<any> => {
         if (path === library.importPaths[0]) {
           const error = { code: 'ENOENT' } as any;
           throw error;
         }
         return Promise.resolve({
           isDirectory: () => true,
-        } as Stats);
+        } as any);
       });
 
-      mocks.storage.checkFileExists.mockResolvedValue(true);
+      mocks.storage.exists.mockResolvedValue(true);
 
       mocks.library.get.mockResolvedValue(library);
 
@@ -222,8 +221,8 @@ describe(LibraryService.name, () => {
 
       mocks.library.get.mockResolvedValue(library);
       mocks.storage.walk.mockImplementation(mockWalk);
-      mocks.storage.stat.mockResolvedValue({ isDirectory: () => true } as Stats);
-      mocks.storage.checkFileExists.mockResolvedValue(true);
+      mocks.storage.getMetadata.mockResolvedValue({ type: 'directory' } as any);
+      mocks.storage.exists.mockResolvedValue(true);
       mocks.asset.filterNewExternalAssetPaths.mockResolvedValue(['/data/user1/photo.jpg']);
 
       await sut.handleQueueSyncFiles({ id: library.id });
@@ -247,17 +246,17 @@ describe(LibraryService.name, () => {
     it('should ignore import paths that do not exist', async () => {
       const library = factory.library({ importPaths: ['/foo', '/bar'] });
 
-      mocks.storage.stat.mockImplementation((path): Promise<Stats> => {
+      mocks.storage.getMetadata.mockImplementation((path): Promise<any> => {
         if (path === library.importPaths[0]) {
           const error = { code: 'ENOENT' } as any;
           throw error;
         }
         return Promise.resolve({
           isDirectory: () => true,
-        } as Stats);
+        } as any);
       });
 
-      mocks.storage.checkFileExists.mockResolvedValue(true);
+      mocks.storage.exists.mockResolvedValue(true);
 
       mocks.library.get.mockResolvedValue(library);
 
@@ -355,7 +354,7 @@ describe(LibraryService.name, () => {
       };
 
       mocks.assetJob.getForSyncAssets.mockResolvedValue([asset]);
-      mocks.storage.stat.mockRejectedValue(new Error('ENOENT, no such file or directory'));
+      mocks.storage.getMetadata.mockRejectedValue(new Error('ENOENT, no such file or directory'));
 
       await expect(sut.handleSyncAssets(mockAssetJob)).resolves.toBe(JobStatus.Success);
 
@@ -377,7 +376,7 @@ describe(LibraryService.name, () => {
       };
 
       mocks.assetJob.getForSyncAssets.mockResolvedValue([asset]);
-      mocks.storage.stat.mockRejectedValue(new Error('Could not read file'));
+      mocks.storage.getMetadata.mockRejectedValue(new Error('Could not read file'));
 
       await expect(sut.handleSyncAssets(mockAssetJob)).resolves.toBe(JobStatus.Success);
 
@@ -399,7 +398,7 @@ describe(LibraryService.name, () => {
       };
 
       mocks.assetJob.getForSyncAssets.mockResolvedValue([asset]);
-      mocks.storage.stat.mockRejectedValue(new Error('Could not read file'));
+      mocks.storage.getMetadata.mockRejectedValue(new Error('Could not read file'));
 
       await expect(sut.handleSyncAssets(mockAssetJob)).resolves.toBe(JobStatus.Success);
 
@@ -418,7 +417,7 @@ describe(LibraryService.name, () => {
       };
 
       mocks.assetJob.getForSyncAssets.mockResolvedValue([asset]);
-      mocks.storage.stat.mockResolvedValue({ mtime: newDate() } as Stats);
+      mocks.storage.getMetadata.mockResolvedValue({ modifiedAt: newDate() } as any);
 
       await expect(sut.handleSyncAssets(mockAssetJob)).resolves.toBe(JobStatus.Success);
 
@@ -440,7 +439,7 @@ describe(LibraryService.name, () => {
       };
 
       mocks.assetJob.getForSyncAssets.mockResolvedValue([asset]);
-      mocks.storage.stat.mockResolvedValue({ mtime: newDate() } as Stats);
+      mocks.storage.getMetadata.mockResolvedValue({ modifiedAt: newDate() } as any);
 
       await expect(sut.handleSyncAssets(mockAssetJob)).resolves.toBe(JobStatus.Success);
 
@@ -461,7 +460,7 @@ describe(LibraryService.name, () => {
       };
 
       mocks.assetJob.getForSyncAssets.mockResolvedValue([asset]);
-      mocks.storage.stat.mockResolvedValue({ mtime: newDate() } as Stats);
+      mocks.storage.getMetadata.mockResolvedValue({ modifiedAt: newDate() } as any);
 
       await expect(sut.handleSyncAssets(mockAssetJob)).resolves.toBe(JobStatus.Success);
 
@@ -482,7 +481,7 @@ describe(LibraryService.name, () => {
       };
 
       mocks.assetJob.getForSyncAssets.mockResolvedValue([asset]);
-      mocks.storage.stat.mockResolvedValue({ mtime: asset.fileModifiedAt } as Stats);
+      mocks.storage.getMetadata.mockResolvedValue({ modifiedAt: asset.fileModifiedAt } as any);
 
       await expect(sut.handleSyncAssets(mockAssetJob)).resolves.toBe(JobStatus.Success);
 
@@ -501,7 +500,7 @@ describe(LibraryService.name, () => {
       };
 
       mocks.assetJob.getForSyncAssets.mockResolvedValue([asset]);
-      mocks.storage.stat.mockResolvedValue({ mtime: newDate() } as Stats);
+      mocks.storage.getMetadata.mockResolvedValue({ modifiedAt: newDate() } as any);
 
       await expect(sut.handleSyncAssets(mockAssetJob)).resolves.toBe(JobStatus.Success);
 
@@ -527,7 +526,7 @@ describe(LibraryService.name, () => {
       const mtime = new Date(asset.fileModifiedAt.getDate() + 1);
 
       mocks.assetJob.getForSyncAssets.mockResolvedValue([asset]);
-      mocks.storage.stat.mockResolvedValue({ mtime } as Stats);
+      mocks.storage.getMetadata.mockResolvedValue({ mtime } as any);
 
       await expect(sut.handleSyncAssets(mockAssetJob)).resolves.toBe(JobStatus.Success);
 
@@ -545,11 +544,11 @@ describe(LibraryService.name, () => {
 
   describe('handleSyncFiles', () => {
     beforeEach(() => {
-      mocks.storage.stat.mockResolvedValue({
+      mocks.storage.getMetadata.mockResolvedValue({
         size: 100,
-        mtime: new Date('2023-01-01'),
+        modifiedAt: new Date('2023-01-01'),
         ctime: new Date('2023-01-01'),
-      } as Stats);
+      } as any);
     });
 
     it('should import a new asset', async () => {
@@ -881,8 +880,8 @@ describe(LibraryService.name, () => {
 
       mocks.library.update.mockResolvedValue(library);
       mocks.library.get.mockResolvedValue(library);
-      mocks.storage.stat.mockResolvedValue({ isDirectory: () => true } as Stats);
-      mocks.storage.checkFileExists.mockResolvedValue(true);
+      mocks.storage.getMetadata.mockResolvedValue({ type: 'directory' } as any);
+      mocks.storage.exists.mockResolvedValue(true);
 
       const cwd = process.cwd();
 
@@ -1177,11 +1176,11 @@ describe(LibraryService.name, () => {
     });
 
     it('should validate directory', async () => {
-      mocks.storage.stat.mockResolvedValue({
+      mocks.storage.getMetadata.mockResolvedValue({
         isDirectory: () => true,
-      } as Stats);
+      } as any);
 
-      mocks.storage.checkFileExists.mockResolvedValue(true);
+      mocks.storage.exists.mockResolvedValue(true);
 
       await expect(sut.validate('library-id', { importPaths: ['/external/user1/'] })).resolves.toEqual({
         importPaths: [
@@ -1195,7 +1194,7 @@ describe(LibraryService.name, () => {
     });
 
     it('should detect when path does not exist', async () => {
-      mocks.storage.stat.mockImplementation(() => {
+      mocks.storage.getMetadata.mockImplementation(() => {
         const error = { code: 'ENOENT' } as any;
         throw error;
       });
@@ -1212,9 +1211,9 @@ describe(LibraryService.name, () => {
     });
 
     it('should detect when path is not a directory', async () => {
-      mocks.storage.stat.mockResolvedValue({
+      mocks.storage.getMetadata.mockResolvedValue({
         isDirectory: () => false,
-      } as Stats);
+      } as any);
 
       await expect(sut.validate('library-id', { importPaths: ['/external/user1/file'] })).resolves.toEqual({
         importPaths: [
@@ -1228,7 +1227,7 @@ describe(LibraryService.name, () => {
     });
 
     it('should return an unknown exception from stat', async () => {
-      mocks.storage.stat.mockImplementation(() => {
+      mocks.storage.getMetadata.mockImplementation(() => {
         throw new Error('Unknown error');
       });
 
@@ -1244,11 +1243,11 @@ describe(LibraryService.name, () => {
     });
 
     it('should detect when access rights are missing', async () => {
-      mocks.storage.stat.mockResolvedValue({
+      mocks.storage.getMetadata.mockResolvedValue({
         isDirectory: () => true,
-      } as Stats);
+      } as any);
 
-      mocks.storage.checkFileExists.mockResolvedValue(false);
+      mocks.storage.exists.mockResolvedValue(false);
 
       await expect(sut.validate('library-id', { importPaths: ['/external/user1/'] })).resolves.toEqual({
         importPaths: [
@@ -1279,9 +1278,9 @@ describe(LibraryService.name, () => {
       const importPaths = ['/data/thumbs', `${process.cwd()}/xyz`, '/data/library'];
       const library = factory.library({ importPaths });
 
-      mocks.storage.stat.mockResolvedValue({ isDirectory: () => true } as Stats);
+      mocks.storage.getMetadata.mockResolvedValue({ type: 'directory' } as any);
 
-      mocks.storage.checkFileExists.mockImplementation((importPath) => Promise.resolve(importPath === importPaths[1]));
+      mocks.storage.exists.mockImplementation((importPath) => Promise.resolve(importPath === importPaths[1]));
 
       await expect(sut.validate(library.id, { importPaths })).resolves.toEqual({
         importPaths: [

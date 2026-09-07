@@ -258,7 +258,7 @@ export class AssetService extends BaseService {
 
     const { sidecarFile: targetFile } = getAssetFiles(targetAsset.files ?? []);
     if (targetFile?.path) {
-      await this.storageRepository.unlink(targetFile.path);
+      await this.storageRepository.deleteFile(targetFile.path);
     }
 
     await this.storageRepository.copyFile(sourceFile.path, `${targetAsset.originalPath}.xmp`);

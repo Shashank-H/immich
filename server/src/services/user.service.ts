@@ -285,7 +285,7 @@ export class UserService extends BaseService {
 
     for (const folder of folders) {
       this.logger.warn(`Removing user from filesystem: ${folder}`);
-      await this.storageRepository.unlinkDir(folder, { recursive: true, force: true });
+      await this.storageRepository.deleteDirectory(folder, { recursive: true, force: true });
     }
 
     this.logger.warn(`Removing user from database: ${user.id}`);

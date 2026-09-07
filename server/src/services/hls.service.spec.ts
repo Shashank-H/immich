@@ -276,7 +276,7 @@ describe(HlsService.name, () => {
     it('prewarms from the last requested segment when no hint is given', async () => {
       mocks.access.asset.checkOwnerAccess.mockResolvedValue(new Set([assetId]));
       mocks.videoStream.getSession.mockResolvedValue({ id: sessionId, assetId } as never);
-      mocks.storage.checkFileExists.mockResolvedValue(true);
+      mocks.storage.exists.mockResolvedValue(true);
       await sut.getSegment(auth, assetId, sessionId, 0, 'seg_5.m4s');
 
       mocks.videoStream.getForMediaPlaylist.mockResolvedValue(eiffelTower);
@@ -299,7 +299,7 @@ describe(HlsService.name, () => {
     it('does not prewarm the variant the session is already playing', async () => {
       mocks.access.asset.checkOwnerAccess.mockResolvedValue(new Set([assetId]));
       mocks.videoStream.getSession.mockResolvedValue({ id: sessionId, assetId } as never);
-      mocks.storage.checkFileExists.mockResolvedValue(true);
+      mocks.storage.exists.mockResolvedValue(true);
       await sut.getSegment(auth, assetId, sessionId, 1, 'seg_5.m4s');
 
       mocks.videoStream.getForMediaPlaylist.mockResolvedValue(eiffelTower);
@@ -316,7 +316,7 @@ describe(HlsService.name, () => {
     beforeEach(() => {
       mocks.access.asset.checkOwnerAccess.mockResolvedValue(new Set([assetId]));
       mocks.videoStream.getSession.mockResolvedValue({ id: sessionId, assetId } as never);
-      mocks.storage.checkFileExists.mockResolvedValue(true);
+      mocks.storage.exists.mockResolvedValue(true);
     });
 
     it('emits HlsHeartbeat with segmentIndex 0 for the first init.mp4 request', async () => {
@@ -379,7 +379,7 @@ describe(HlsService.name, () => {
     });
 
     it('rejects pending waiters for the previous variant on variant change', async () => {
-      mocks.storage.checkFileExists.mockResolvedValueOnce(false);
+      mocks.storage.exists.mockResolvedValueOnce(false);
 
       const pending = sut.getSegment(auth, assetId, sessionId, 0, 'seg_1.m4s');
       await new Promise((resolve) => setImmediate(resolve));

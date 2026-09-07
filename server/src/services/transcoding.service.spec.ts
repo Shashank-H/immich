@@ -20,7 +20,7 @@ describe(TranscodingService.name, () => {
   const ownerId = 'user-1';
 
   const completeSegment = (index: number) => {
-    const listener = vi.mocked(mocks.storage.watchDir).mock.lastCall?.[1];
+    const listener = vi.mocked(mocks.localFilesystem.watchDirectory).mock.lastCall?.[1];
     expect(listener).toBeDefined();
     listener!('rename', `seg_${index}.m4s`);
   };
@@ -79,7 +79,7 @@ describe(TranscodingService.name, () => {
       await sut.onSessionEnd({ sessionId });
 
       expect(process.kill).toHaveBeenCalled();
-      expect(mocks.storage.unlinkDir).toHaveBeenCalled();
+      expect(mocks.storage.deleteDirectory).toHaveBeenCalled();
       expect(mocks.videoStream.deleteSession).toHaveBeenCalledWith(sessionId);
     });
 
@@ -87,7 +87,7 @@ describe(TranscodingService.name, () => {
       await sut.onSessionEnd({ sessionId: 'never-created' });
 
       expect(mocks.videoStream.deleteSession).not.toHaveBeenCalled();
-      expect(mocks.storage.unlinkDir).not.toHaveBeenCalled();
+      expect(mocks.storage.deleteDirectory).not.toHaveBeenCalled();
     });
   });
 
@@ -361,7 +361,7 @@ describe(TranscodingService.name, () => {
 
       expect(mocks.videoStream.deleteSession).toHaveBeenCalledWith('expired-1');
       expect(mocks.videoStream.deleteSession).toHaveBeenCalledWith('expired-2');
-      expect(mocks.storage.unlinkDir).toHaveBeenCalledTimes(2);
+      expect(mocks.storage.deleteDirectory).toHaveBeenCalledTimes(2);
     });
   });
 

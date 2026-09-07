@@ -30,7 +30,7 @@ export class StorageService extends BaseService {
     const candidates = ['/data', '/usr/src/app/upload'];
 
     for (const candidate of candidates) {
-      const isExists = this.storageRepository.existsSync(candidate);
+      const isExists = this.localFilesystemRepository.exists(candidate);
       if (isExists) {
         targets.push(candidate);
       }
@@ -143,7 +143,7 @@ export class StorageService extends BaseService {
       }
 
       try {
-        await this.storageRepository.unlink(file);
+        await this.storageRepository.deleteFile(file);
       } catch (error: any) {
         this.logger.warn('Unable to remove file from disk', error);
       }
@@ -165,7 +165,7 @@ export class StorageService extends BaseService {
   private async createMountFile(folder: StorageFolder) {
     const { folderPath, internalPath, externalPath } = this.getMountFilePaths(folder);
     try {
-      this.storageRepository.mkdirSync(folderPath);
+      await this.storageRepository.createDirectory(folderPath);
       await this.storageRepository.createFile(internalPath, Buffer.from(Date.now().toString()));
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === 'EEXIST') {

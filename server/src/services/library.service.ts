@@ -1,7 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Insertable } from 'kysely';
-import { R_OK } from 'node:constants';
-import { Stats } from 'node:fs';
 import path, { isAbsolute, parse } from 'node:path';
 import picomatch from 'picomatch';
 import { JOBS_LIBRARY_PAGINATION_SIZE } from 'src/constants';
@@ -30,6 +28,7 @@ import {
 } from 'src/enum';
 import { ArgOf } from 'src/repositories/event.repository';
 import { AssetSyncResult } from 'src/repositories/library.repository';
+import { StorageMetadata } from 'src/repositories/storage.repository';
 import { AssetTable } from 'src/schema/tables/asset.table';
 import { BaseService } from 'src/services/base.service';
 import { JobOf } from 'src/types';
@@ -128,7 +127,7 @@ export class LibraryService extends BaseService {
       });
     };
 
-    this.watchers[id] = this.storageRepository.watch(
+    this.watchers[id] = this.localFilesystemRepository.watch(
       library.importPaths,
       {
         usePolling: false,
@@ -308,8 +307,8 @@ export class LibraryService extends BaseService {
     }
 
     try {
-      const stat = await this.storageRepository.stat(importPath);
-      if (!stat.isDirectory()) {
+      const stat = await this.storageRepository.getMetadata(importPath);
+      if (stat.type !== 'directory') {
         validation.message = 'Not a directory';
         return validation;
       }
@@ -322,7 +321,7 @@ export class LibraryService extends BaseService {
       return validation;
     }
 
-    const isAccess = await this.storageRepository.checkFileExists(importPath, R_OK);
+    const isAccess = await this.storageRepository.exists(importPath);
 
     if (!isAccess) {
       validation.message = 'Lacking read permission for folder';
@@ -398,7 +397,7 @@ export class LibraryService extends BaseService {
 
   private async processEntity(filePath: string, ownerId: string, libraryId: string) {
     const assetPath = path.normalize(filePath);
-    const stat = await this.storageRepository.stat(assetPath);
+    const stat = await this.storageRepository.getMetadata(assetPath);
 
     return {
       ownerId,
@@ -407,9 +406,9 @@ export class LibraryService extends BaseService {
       checksumAlgorithm: ChecksumAlgorithm.sha1Path,
       originalPath: assetPath,
 
-      fileCreatedAt: stat.mtime,
-      fileModifiedAt: stat.mtime,
-      localDateTime: stat.mtime,
+      fileCreatedAt: stat.modifiedAt,
+      fileModifiedAt: stat.modifiedAt,
+      localDateTime: stat.modifiedAt,
       type: mimeTypes.isVideo(assetPath) ? AssetType.Video : AssetType.Image,
       originalFileName: parse(assetPath).base,
       isExternal: true,
@@ -485,7 +484,7 @@ export class LibraryService extends BaseService {
     this.logger.debug(`Checking batch of ${assets.length} existing asset(s) in library ${job.libraryId}`);
 
     const stats = await Promise.all(
-      assets.map((asset) => this.storageRepository.stat(asset.originalPath).catch(() => null)),
+      assets.map((asset) => this.storageRepository.getMetadata(asset.originalPath).catch(() => null)),
     );
 
     for (let i = 0; i < assets.length; i++) {
@@ -579,7 +578,7 @@ export class LibraryService extends BaseService {
       status: AssetStatus;
       fileModifiedAt: Date;
     },
-    stat: Stats | null,
+    stat: StorageMetadata | null,
   ): AssetSyncResult {
     if (!stat) {
       // File not found on disk or permission error
@@ -601,7 +600,7 @@ export class LibraryService extends BaseService {
       return AssetSyncResult.CHECK_OFFLINE;
     }
 
-    if (stat.mtime.valueOf() !== asset.fileModifiedAt.valueOf()) {
+    if (stat.modifiedAt.valueOf() !== asset.fileModifiedAt.valueOf()) {
       this.logger.verbose(`Asset ${asset.originalPath} needs metadata extraction in library ${asset.libraryId}`);
 
       return AssetSyncResult.UPDATE;

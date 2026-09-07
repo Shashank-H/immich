@@ -38,6 +38,7 @@ import { EventRepository } from 'src/repositories/event.repository';
 import { IntegrityRepository } from 'src/repositories/integrity.repository';
 import { JobRepository } from 'src/repositories/job.repository';
 import { LibraryRepository } from 'src/repositories/library.repository';
+import { LocalFilesystemRepository } from 'src/repositories/local-filesystem.repository';
 import { LoggingRepository } from 'src/repositories/logging.repository';
 import { MachineLearningRepository } from 'src/repositories/machine-learning.repository';
 import { MapRepository } from 'src/repositories/map.repository';
@@ -143,7 +144,7 @@ export class MediumTestContext<S extends ClassConstructor<typeof BaseService> = 
         return this.get(dep);
       }
 
-      if (options.mock.includes(dep)) {
+      if (options.mock.includes(dep) || dep === LocalFilesystemRepository) {
         return newMockRepository(dep);
       }
     }) as unknown as ClassConstructorsToInstances<BaseServiceDeps>;
@@ -403,14 +404,14 @@ export class SyncTestContext extends MediumTestContext<typeof SyncService> {
 
 const mockDate = new Date('2024-06-01T12:00:00.000Z');
 const mockStats = {
-  mtime: mockDate,
+  modifiedAt: mockDate,
   atime: mockDate,
   ctime: mockDate,
-  birthtime: mockDate,
+  createdAt: mockDate,
   atimeMs: 0,
-  mtimeMs: 0,
+  modifiedAtMs: 0,
   ctimeMs: 0,
-  birthtimeMs: 0,
+  createdAtMs: 0,
 };
 
 export class ExifTestContext extends MediumTestContext<typeof MetadataService> {
@@ -431,7 +432,7 @@ export class ExifTestContext extends MediumTestContext<typeof MetadataService> {
     this.getMock(ConfigRepository).getEnv.mockReturnValue(mockEnvData({}));
     this.getMock(EventRepository).emit.mockResolvedValue();
     this.getMock(MapRepository).reverseGeocode.mockResolvedValue({ country: null, state: null, city: null });
-    this.getMock(StorageRepository).stat.mockResolvedValue(mockStats as Stats);
+    this.getMock(StorageRepository).getMetadata.mockResolvedValue(mockStats as any);
   }
 
   getMockStats() {
