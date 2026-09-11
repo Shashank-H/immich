@@ -41,12 +41,12 @@ describe(StorageService.name, () => {
           upload: true,
         },
       });
-      expect(mocks.storage.mkdirSync).toHaveBeenCalledWith(expect.stringContaining('/data/encoded-video'));
-      expect(mocks.storage.mkdirSync).toHaveBeenCalledWith(expect.stringContaining('/data/library'));
-      expect(mocks.storage.mkdirSync).toHaveBeenCalledWith(expect.stringContaining('/data/profile'));
-      expect(mocks.storage.mkdirSync).toHaveBeenCalledWith(expect.stringContaining('/data/thumbs'));
-      expect(mocks.storage.mkdirSync).toHaveBeenCalledWith(expect.stringContaining('/data/upload'));
-      expect(mocks.storage.mkdirSync).toHaveBeenCalledWith(expect.stringContaining('/data/backups'));
+      expect(mocks.storage.createDirectory).toHaveBeenCalledWith(expect.stringContaining('/data/encoded-video'));
+      expect(mocks.storage.createDirectory).toHaveBeenCalledWith(expect.stringContaining('/data/library'));
+      expect(mocks.storage.createDirectory).toHaveBeenCalledWith(expect.stringContaining('/data/profile'));
+      expect(mocks.storage.createDirectory).toHaveBeenCalledWith(expect.stringContaining('/data/thumbs'));
+      expect(mocks.storage.createDirectory).toHaveBeenCalledWith(expect.stringContaining('/data/upload'));
+      expect(mocks.storage.createDirectory).toHaveBeenCalledWith(expect.stringContaining('/data/backups'));
       expect(mocks.storage.createFile).toHaveBeenCalledWith(
         expect.stringContaining('/data/encoded-video/.immich'),
         expect.any(Buffer),
@@ -106,9 +106,9 @@ describe(StorageService.name, () => {
           upload: true,
         },
       });
-      expect(mocks.storage.mkdirSync).toHaveBeenCalledTimes(2);
-      expect(mocks.storage.mkdirSync).toHaveBeenCalledWith(expect.stringContaining('/data/library'));
-      expect(mocks.storage.mkdirSync).toHaveBeenCalledWith(expect.stringContaining('/data/backups'));
+      expect(mocks.storage.createDirectory).toHaveBeenCalledTimes(2);
+      expect(mocks.storage.createDirectory).toHaveBeenCalledWith(expect.stringContaining('/data/library'));
+      expect(mocks.storage.createDirectory).toHaveBeenCalledWith(expect.stringContaining('/data/backups'));
       expect(mocks.storage.createFile).toHaveBeenCalledTimes(2);
       expect(mocks.storage.createFile).toHaveBeenCalledWith(
         expect.stringContaining('/data/library/.immich'),
@@ -183,21 +183,21 @@ describe(StorageService.name, () => {
     it('should handle null values', async () => {
       await sut.handleDeleteFiles({ files: [undefined, null] });
 
-      expect(mocks.storage.unlink).not.toHaveBeenCalled();
+      expect(mocks.storage.deleteFile).not.toHaveBeenCalled();
     });
 
     it('should handle an error removing a file', async () => {
-      mocks.storage.unlink.mockRejectedValue(new Error('something-went-wrong'));
+      mocks.storage.deleteFile.mockRejectedValue(new Error('something-went-wrong'));
 
       await sut.handleDeleteFiles({ files: ['path/to/something'] });
 
-      expect(mocks.storage.unlink).toHaveBeenCalledWith('path/to/something');
+      expect(mocks.storage.deleteFile).toHaveBeenCalledWith('path/to/something');
     });
 
     it('should remove the file', async () => {
       await sut.handleDeleteFiles({ files: ['path/to/something'] });
 
-      expect(mocks.storage.unlink).toHaveBeenCalledWith('path/to/something');
+      expect(mocks.storage.deleteFile).toHaveBeenCalledWith('path/to/something');
     });
   });
 });

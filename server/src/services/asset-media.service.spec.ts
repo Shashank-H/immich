@@ -276,22 +276,22 @@ describe(AssetMediaService.name, () => {
   });
 
   describe('getUploadFolder', () => {
-    it('should require authentication', () => {
-      expect(() => sut.getUploadFolder(uploadFile.nullAuth)).toThrowError(UnauthorizedException);
+    it('should require authentication', async () => {
+      await expect(sut.getUploadFolder(uploadFile.nullAuth)).rejects.toThrowError(UnauthorizedException);
     });
 
-    it('should return profile for profile uploads', () => {
-      expect(sut.getUploadFolder(uploadFile.filename(UploadFieldName.PROFILE_DATA, 'image.jpg'))).toEqual(
+    it('should return profile for profile uploads', async () => {
+      expect(await sut.getUploadFolder(uploadFile.filename(UploadFieldName.PROFILE_DATA, 'image.jpg'))).toEqual(
         expect.stringContaining('/data/profile/admin_id'),
       );
-      expect(mocks.storage.mkdirSync).toHaveBeenCalledWith(expect.stringContaining('/data/profile/admin_id'));
+      expect(mocks.storage.createDirectory).toHaveBeenCalledWith(expect.stringContaining('/data/profile/admin_id'));
     });
 
-    it('should return upload for everything else', () => {
-      expect(sut.getUploadFolder(uploadFile.filename(UploadFieldName.ASSET_DATA, 'image.jpg'))).toEqual(
+    it('should return upload for everything else', async () => {
+      expect(await sut.getUploadFolder(uploadFile.filename(UploadFieldName.ASSET_DATA, 'image.jpg'))).toEqual(
         expect.stringContaining('/data/upload/admin_id/ra/nd'),
       );
-      expect(mocks.storage.mkdirSync).toHaveBeenCalledWith(expect.stringContaining('/data/upload/admin_id/ra/nd'));
+      expect(mocks.storage.createDirectory).toHaveBeenCalledWith(expect.stringContaining('/data/upload/admin_id/ra/nd'));
     });
   });
 
@@ -324,7 +324,7 @@ describe(AssetMediaService.name, () => {
       });
       expect(mocks.event.emit).not.toHaveBeenCalled();
       expect(mocks.user.updateUsage).not.toHaveBeenCalledWith(authStub.user1.user.id, file.size);
-      expect(mocks.storage.utimes).not.toHaveBeenCalledWith(
+      expect(mocks.storage.setFileTimes).not.toHaveBeenCalledWith(
         file.originalPath,
         expect.any(Date),
         new Date(createDto.fileModifiedAt),
@@ -349,7 +349,7 @@ describe(AssetMediaService.name, () => {
       });
 
       expect(mocks.asset.create).toHaveBeenCalled();
-      expect(mocks.storage.utimes).toHaveBeenCalledWith(
+      expect(mocks.storage.setFileTimes).toHaveBeenCalledWith(
         file.originalPath,
         expect.any(Date),
         new Date(createDto.fileModifiedAt),
@@ -457,7 +457,7 @@ describe(AssetMediaService.name, () => {
         id: asset.id,
       });
 
-      expect(mocks.storage.utimes).toHaveBeenCalledWith(
+      expect(mocks.storage.setFileTimes).toHaveBeenCalledWith(
         fileStub.photoSidecar.originalPath,
         expect.any(Date),
         new Date(createDto.fileModifiedAt),

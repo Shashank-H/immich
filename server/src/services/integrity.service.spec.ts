@@ -25,11 +25,11 @@ describe(IntegrityService.name, () => {
       await sut.handleUntrackedRefresh({ items: [{ reportId: 'report-id', path }] });
 
       expect(mocks.integrityReport.deleteByIds).toHaveBeenCalledWith(['report-id']);
-      expect(mocks.storage.stat).not.toHaveBeenCalled();
+      expect(mocks.storage.getMetadata).not.toHaveBeenCalled();
     });
 
     it('should keep a report whose path is still untracked and present on disk', async () => {
-      mocks.storage.stat.mockResolvedValue({} as never);
+      mocks.storage.getMetadata.mockResolvedValue({} as never);
 
       await sut.handleUntrackedRefresh({ items: [{ reportId: 'report-id', path: '/data/upload/orphan.mov' }] });
 
@@ -52,7 +52,7 @@ describe(IntegrityService.name, () => {
 
       await sut.deleteIntegrityReport('user-id', 'report-id');
 
-      expect(mocks.storage.unlink).not.toHaveBeenCalled();
+      expect(mocks.storage.deleteFile).not.toHaveBeenCalled();
       expect(mocks.integrityReport.deleteById).toHaveBeenCalledWith('report-id');
     });
   });
@@ -62,7 +62,7 @@ describe(IntegrityService.name, () => {
       const tracked = '/data/upload/admin/ab/asset.mov';
       const untracked = '/data/upload/orphan.mov';
       mocks.integrityReport.getTrackedPaths.mockResolvedValue([{ path: tracked }] as never);
-      mocks.storage.unlink.mockResolvedValue();
+      mocks.storage.deleteFile.mockResolvedValue();
 
       await sut.handleDeleteIntegrityReports({
         reports: [
@@ -71,7 +71,7 @@ describe(IntegrityService.name, () => {
         ] as never,
       });
 
-      expect(mocks.storage.unlink).toHaveBeenCalledExactlyOnceWith(untracked);
+      expect(mocks.storage.deleteFile).toHaveBeenCalledExactlyOnceWith(untracked);
       expect(mocks.integrityReport.deleteByIds).toHaveBeenCalledWith(['tracked-report', 'untracked-report']);
     });
   });

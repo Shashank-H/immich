@@ -23,7 +23,7 @@ type MigrationStatus = {
 export class CliService extends BaseService {
   async schemaReport(): Promise<SchemaReport> {
     // eslint-disable-next-line unicorn/prefer-module
-    const allFiles = await this.storageRepository.readdir(join(__dirname, '../schema/migrations'));
+    const allFiles = (await this.localFilesystemRepository.listDirectory(join(__dirname, '../schema/migrations'))).map(({ name }) => name);
     const files = allFiles.filter((file) => file.endsWith('.js')).map((file) => file.slice(0, -3));
     const rows = await this.databaseRepository.getMigrations();
     const filesSet = new Set(files);

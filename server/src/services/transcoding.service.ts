@@ -202,7 +202,7 @@ export class TranscodingService extends BaseService {
       sessionId: session.id,
       variantIndex,
     });
-    this.storageRepository.mkdirSync(variantDir);
+    await this.storageRepository.createDirectory(variantDir);
 
     // Encoder runs at fps = packetCount × timeBase / totalDuration with
     // gop = ceil(SEGMENT_DURATION × fps). To start segment K's content at
@@ -276,7 +276,7 @@ export class TranscodingService extends BaseService {
     // `seg_K.m4s`. The rename event fires the moment the renamed file is
     // observable — the only signal we need to tell the API worker the
     // segment is ready to serve.
-    const watcher = this.storageRepository.watchDir(variantDir, (eventType, filename) => {
+    const watcher = this.localFilesystemRepository.watchDirectory(variantDir, (eventType, filename) => {
       if (eventType !== 'rename' || !filename || session.process !== process) {
         return;
       }
@@ -361,7 +361,7 @@ export class TranscodingService extends BaseService {
   private async removeSessionDir(session: { ownerId: string; id: string }) {
     const dir = StorageCore.getHlsSessionFolder({ ownerId: session.ownerId, sessionId: session.id });
     try {
-      await this.storageRepository.unlinkDir(dir, { recursive: true, force: true });
+      await this.storageRepository.deleteDirectory(dir, { recursive: true, force: true });
     } catch (error) {
       if ((error as NodeJS.ErrnoException)?.code !== 'ENOENT') {
         throw error;

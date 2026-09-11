@@ -34,7 +34,7 @@ describe(StorageService.name, () => {
       configMock.getEnv.mockReturnValue(mockEnvData({}));
 
       const storageMock = ctx.getMock(StorageRepository);
-      storageMock.mkdirSync.mockReturnValue(void 0);
+      storageMock.createDirectory.mockReturnValue(void 0);
       storageMock.existsSync.mockReturnValue(true);
       storageMock.createFile.mockResolvedValue(void 0);
       storageMock.overwriteFile.mockResolvedValue(void 0);

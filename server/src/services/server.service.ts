@@ -66,7 +66,7 @@ export class ServerService extends BaseService {
 
   async getStorage(): Promise<ServerStorageResponseDto> {
     const libraryBase = StorageCore.getBaseFolder(StorageFolder.Library);
-    const diskInfo = await this.storageRepository.checkDiskUsage(libraryBase);
+    const diskInfo = await this.localFilesystemRepository.getDiskUsage(libraryBase);
 
     const usagePercentage = (((diskInfo.total - diskInfo.free) / diskInfo.total) * 100).toFixed(2);
 

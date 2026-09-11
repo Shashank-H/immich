@@ -3,7 +3,6 @@ import { ContainerDirectoryItem, ExifDateTime, Tags } from 'exiftool-vendored';
 import { Insertable } from 'kysely';
 import _ from 'lodash';
 import { DateTime, Duration } from 'luxon';
-import { Stats } from 'node:fs';
 import { constants } from 'node:fs/promises';
 import { join, parse } from 'node:path';
 
@@ -26,6 +25,7 @@ import {
 import { ArgOf } from 'src/repositories/event.repository';
 import { ReverseGeocodeResult } from 'src/repositories/map.repository';
 import { ImmichTags } from 'src/repositories/metadata.repository';
+import { StorageMetadata } from 'src/repositories/storage.repository';
 import { AssetExifTable } from 'src/schema/tables/asset-exif.table';
 import { AssetFaceTable } from 'src/schema/tables/asset-face.table';
 import { PersonTable } from 'src/schema/tables/person.table';
@@ -240,7 +240,7 @@ export class MetadataService extends BaseService {
 
     const [exifResult, stats] = await Promise.all([
       this.getExifTags(asset),
-      this.storageRepository.stat(asset.originalPath),
+      this.storageRepository.getMetadata(asset.originalPath),
     ]);
     const { tags: exifTags, audio, video, packets, format } = exifResult;
     this.logger.verbose('Exif Tags', exifTags);
@@ -266,7 +266,7 @@ export class MetadataService extends BaseService {
 
       // dates
       dateTimeOriginal: dates.dateTimeOriginal,
-      modifyDate: stats.mtime,
+      modifyDate: stats.modifiedAt,
       timeZone: dates.timeZone,
 
       // gps
@@ -369,7 +369,7 @@ export class MetadataService extends BaseService {
           duration: this.getDuration(exifTags),
           localDateTime: dates.localDateTime,
           fileCreatedAt: dates.dateTimeOriginal ?? undefined,
-          fileModifiedAt: stats.mtime,
+          fileModifiedAt: stats.modifiedAt,
 
           // Keep unedited assets in sync with the file on disk, but don't overwrite edited dimensions.
           width: !asset.isEdited || asset.width === null ? assetWidth : undefined,
@@ -430,7 +430,7 @@ export class MetadataService extends BaseService {
 
     let sidecarPath = null;
     for (const candidate of this.getSidecarCandidates(asset)) {
-      const isExists = await this.storageRepository.checkFileExists(candidate, constants.R_OK);
+      const isExists = await this.storageRepository.exists(candidate);
       if (!isExists) {
         continue;
       }
@@ -663,7 +663,7 @@ export class MetadataService extends BaseService {
     return asset.type === AssetType.Image && !!(tags.MotionPhoto || tags.MicroVideo);
   }
 
-  private async applyMotionPhotos(asset: Asset, tags: ImmichTags, dates: Dates, stats: Stats) {
+  private async applyMotionPhotos(asset: Asset, tags: ImmichTags, dates: Dates, stats: StorageMetadata) {
     const isMotionPhoto = tags.MotionPhoto;
     const isMicroVideo = tags.MicroVideo;
     const videoOffset = tags.MicroVideoOffset;
@@ -710,11 +710,7 @@ export class MetadataService extends BaseService {
       }
       // Default video extraction
       else {
-        video = await this.storageRepository.readFile(asset.originalPath, {
-          buffer: Buffer.alloc(length),
-          position,
-          length,
-        });
+        video = await this.storageRepository.readFile(asset.originalPath, { offset: position, length });
       }
       const checksum = this.cryptoRepository.hashSha1(video);
       const checksumQuery = { ownerId: asset.ownerId, libraryId: asset.libraryId ?? undefined, checksum };
@@ -730,7 +726,7 @@ export class MetadataService extends BaseService {
             libraryId: asset.libraryId,
             type: AssetType.Video,
             fileCreatedAt: dates.dateTimeOriginal,
-            fileModifiedAt: stats.mtime,
+            fileModifiedAt: stats.modifiedAt,
             localDateTime: dates.localDateTime,
             checksum,
             checksumAlgorithm: ChecksumAlgorithm.sha1File,
@@ -791,9 +787,9 @@ export class MetadataService extends BaseService {
       }
 
       // write extracted motion video to disk, especially if the encoded-video folder has been deleted
-      const isExistsOnDisk = await this.storageRepository.checkFileExists(motionAsset.originalPath);
+      const isExistsOnDisk = await this.storageRepository.exists(motionAsset.originalPath);
       if (!isExistsOnDisk) {
-        this.storageCore.ensureFolders(motionAsset.originalPath);
+        await this.storageCore.ensureFolders(motionAsset.originalPath);
         await this.storageRepository.createFile(motionAsset.originalPath, video);
         this.logger.log(`Wrote motion photo video to ${motionAsset.originalPath}`);
 
@@ -993,7 +989,7 @@ export class MetadataService extends BaseService {
   private getDates(
     asset: { id: string; originalPath: string; fileCreatedAt: Date },
     exifTags: ImmichTags,
-    stats: Stats,
+    stats: StorageMetadata,
   ) {
     const result = firstDateTime(exifTags);
     const tag = result?.tag;
@@ -1041,7 +1037,9 @@ export class MetadataService extends BaseService {
       const earliestDate = DateTime.fromMillis(
         Math.min(
           asset.fileCreatedAt.getTime(),
-          stats.birthtimeMs ? Math.min(stats.mtimeMs, stats.birthtimeMs) : stats.mtime.getTime(),
+          stats.createdAt.getTime()
+            ? Math.min(stats.modifiedAt.getTime(), stats.createdAt.getTime())
+            : stats.modifiedAt.getTime(),
         ),
       );
       this.logger.debug(

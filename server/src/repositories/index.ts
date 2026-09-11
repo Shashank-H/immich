@@ -40,7 +40,8 @@ import { SessionRepository } from 'src/repositories/session.repository';
 import { SharedLinkAssetRepository } from 'src/repositories/shared-link-asset.repository';
 import { SharedLinkRepository } from 'src/repositories/shared-link.repository';
 import { StackRepository } from 'src/repositories/stack.repository';
-import { StorageRepository } from 'src/repositories/storage.repository';
+import { LocalFilesystemRepository } from 'src/repositories/local-filesystem.repository';
+import { FilesystemStorageRepository, StorageRepository } from 'src/repositories/storage.repository';
 import { SyncCheckpointRepository } from 'src/repositories/sync-checkpoint.repository';
 import { SyncRepository } from 'src/repositories/sync.repository';
 import { SystemMetadataRepository } from 'src/repositories/system-metadata.repository';
@@ -97,7 +98,8 @@ export const repositories = [
   SharedLinkRepository,
   SharedLinkAssetRepository,
   StackRepository,
-  StorageRepository,
+  FilesystemStorageRepository,
+  LocalFilesystemRepository,
   SyncRepository,
   SyncCheckpointRepository,
   SystemMetadataRepository,
@@ -111,3 +113,5 @@ export const repositories = [
   WebsocketRepository,
   WorkflowRepository,
 ];
+
+export const repositoryProviders = [{ provide: StorageRepository, useExisting: FilesystemStorageRepository }];

@@ -44,12 +44,12 @@ const setup = (db?: Kysely<DB>) => {
     mock: [EventRepository, StorageRepository, LoggingRepository],
   });
 
-  ctx.getMock(StorageRepository).stat.mockResolvedValue({
+  ctx.getMock(StorageRepository).getMetadata.mockResolvedValue({
     size: 123_456,
-    mtime: new Date(654_321),
-    mtimeMs: 654_321,
-    birthtimeMs: 654_322,
-  } as Stats);
+    modifiedAt: new Date(654_321),
+    modifiedAtMs: 654_321,
+    createdAtMs: 654_322,
+  } as any);
 
   return { sut, ctx };
 };

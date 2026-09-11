@@ -2,7 +2,6 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { parse } from 'cookie';
 import { NextFunction, Request, Response } from 'express';
 import { jwtVerify } from 'jose';
-import { readFileSync } from 'node:fs';
 import { IncomingHttpHeaders } from 'node:http';
 import { serverVersion } from 'src/constants';
 import { StorageCore } from 'src/cores/storage.core';
@@ -19,6 +18,7 @@ import { MaintenanceWebsocketRepository } from 'src/maintenance/maintenance-webs
 import { AppRepository } from 'src/repositories/app.repository';
 import { ConfigRepository } from 'src/repositories/config.repository';
 import { DatabaseRepository } from 'src/repositories/database.repository';
+import { LocalFilesystemRepository } from 'src/repositories/local-filesystem.repository';
 import { LoggingRepository } from 'src/repositories/logging.repository';
 import { ProcessRepository } from 'src/repositories/process.repository';
 import { StorageRepository } from 'src/repositories/storage.repository';
@@ -52,6 +52,7 @@ export class MaintenanceWorkerService {
     private maintenanceWebsocketRepository: MaintenanceWebsocketRepository,
     private maintenanceHealthRepository: MaintenanceHealthRepository,
     private storageRepository: StorageRepository,
+    private localFilesystemRepository: LocalFilesystemRepository,
     private processRepository: ProcessRepository,
     private databaseRepository: DatabaseRepository,
     private databaseBackupService: DatabaseBackupService,
@@ -133,7 +134,7 @@ export class MaintenanceWorkerService {
 
     let index = '';
     try {
-      index = readFileSync(resourcePaths.web.indexHtml).toString();
+      index = this.localFilesystemRepository.readFileSync(resourcePaths.web.indexHtml).toString();
     } catch {
       this.logger.warn(`Unable to open ${resourcePaths.web.indexHtml}, skipping SSR.`);
     }
@@ -171,7 +172,7 @@ export class MaintenanceWorkerService {
     const candidates = ['/data', '/usr/src/app/upload'];
 
     for (const candidate of candidates) {
-      const isExists = this.storageRepository.existsSync(candidate);
+      const isExists = this.localFilesystemRepository.exists(candidate);
       if (isExists) {
         targets.push(candidate);
       }

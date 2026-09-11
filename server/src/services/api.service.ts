@@ -1,8 +1,8 @@
 import { Injectable, NotAcceptableException } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
 import { escape } from 'lodash';
-import { readFileSync } from 'node:fs';
 import { ConfigRepository } from 'src/repositories/config.repository';
+import { LocalFilesystemRepository } from 'src/repositories/local-filesystem.repository';
 import { LoggingRepository } from 'src/repositories/logging.repository';
 import { AuthService } from 'src/services/auth.service';
 import { SharedLinkService } from 'src/services/shared-link.service';
@@ -32,6 +32,7 @@ export class ApiService {
     private sharedLinkService: SharedLinkService,
     private configRepository: ConfigRepository,
     private logger: LoggingRepository,
+    private localFilesystemRepository: LocalFilesystemRepository,
   ) {
     this.logger.setContext(ApiService.name);
   }
@@ -41,7 +42,7 @@ export class ApiService {
 
     let index = '';
     try {
-      index = readFileSync(resourcePaths.web.indexHtml).toString();
+      index = this.localFilesystemRepository.readFileSync(resourcePaths.web.indexHtml).toString();
     } catch {
       this.logger.warn(`Unable to open ${resourcePaths.web.indexHtml}, skipping SSR.`);
     }

@@ -39,6 +39,7 @@ import { EventRepository } from 'src/repositories/event.repository';
 import { IntegrityRepository } from 'src/repositories/integrity.repository';
 import { JobRepository } from 'src/repositories/job.repository';
 import { LibraryRepository } from 'src/repositories/library.repository';
+import { LocalFilesystemRepository } from 'src/repositories/local-filesystem.repository';
 import { LoggingRepository } from 'src/repositories/logging.repository';
 import { MachineLearningRepository } from 'src/repositories/machine-learning.repository';
 import { MapRepository } from 'src/repositories/map.repository';
@@ -275,6 +276,7 @@ export type ServiceOverrides = {
   sharedLinkAsset: SharedLinkAssetRepository;
   stack: StackRepository;
   storage: StorageRepository;
+  localFilesystem: LocalFilesystemRepository;
   sync: SyncRepository;
   syncCheckpoint: SyncCheckpointRepository;
   systemMetadata: SystemMetadataRepository;
@@ -361,6 +363,7 @@ export const getMocks = () => {
     sharedLinkAsset: automock(SharedLinkAssetRepository),
     stack: automock(StackRepository),
     storage: newStorageRepositoryMock(),
+    localFilesystem: automock(LocalFilesystemRepository),
     sync: automock(SyncRepository),
     syncCheckpoint: automock(SyncCheckpointRepository),
     systemMetadata: newSystemMetadataRepositoryMock(),
@@ -446,6 +449,7 @@ export const newTestService = <T extends BaseService>(
     overrides.view || (mocks.view as As<ViewRepository>),
     overrides.websocket || (mocks.websocket as As<WebsocketRepository>),
     overrides.workflow || (mocks.workflow as As<WorkflowRepository>),
+    overrides.localFilesystem || (mocks.localFilesystem as As<LocalFilesystemRepository>),
   );
 
   return {

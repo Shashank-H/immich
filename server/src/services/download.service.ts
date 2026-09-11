@@ -107,7 +107,7 @@ export class DownloadService extends BaseService {
       let realpath = dto.edited && editedPath ? editedPath : originalPath;
 
       try {
-        realpath = await this.storageRepository.realpath(realpath);
+        realpath = await this.storageRepository.resolvePath(realpath);
       } catch {
         this.logger.warn('Unable to resolve realpath', { originalPath });
       }

@@ -27,6 +27,7 @@ import { EventRepository } from 'src/repositories/event.repository';
 import { IntegrityRepository } from 'src/repositories/integrity.repository';
 import { JobRepository } from 'src/repositories/job.repository';
 import { LibraryRepository } from 'src/repositories/library.repository';
+import { LocalFilesystemRepository } from 'src/repositories/local-filesystem.repository';
 import { LoggingRepository } from 'src/repositories/logging.repository';
 import { MachineLearningRepository } from 'src/repositories/machine-learning.repository';
 import { MapRepository } from 'src/repositories/map.repository';
@@ -121,6 +122,7 @@ export const BASE_SERVICE_DEPENDENCIES = [
   ViewRepository,
   WebsocketRepository,
   WorkflowRepository,
+  LocalFilesystemRepository,
 ] as const;
 
 @Injectable()
@@ -183,6 +185,7 @@ export class BaseService {
     protected viewRepository: ViewRepository,
     protected websocketRepository: WebsocketRepository,
     protected workflowRepository: WorkflowRepository,
+    protected localFilesystemRepository: LocalFilesystemRepository,
   ) {
     this.logger.setContext(this.constructor.name);
     this.storageCore = StorageCore.create(
@@ -194,6 +197,7 @@ export class BaseService {
       storageRepository,
       systemMetadataRepository,
       this.logger,
+      localFilesystemRepository,
     );
   }
 
@@ -254,6 +258,7 @@ export class BaseService {
       ctx.viewRepository,
       ctx.websocketRepository,
       ctx.workflowRepository,
+      ctx.localFilesystemRepository,
     );
 
     service.logger.setContext(BaseService.name);

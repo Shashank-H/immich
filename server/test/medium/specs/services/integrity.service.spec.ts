@@ -178,7 +178,7 @@ describe(IntegrityService.name, () => {
     it('deletes untracked file', async () => {
       const { sut, ctx } = setup();
       const storage = ctx.getMock(StorageRepository);
-      storage.unlink.mockResolvedValue(void 0);
+      storage.deleteFile.mockResolvedValue(void 0);
 
       const {
         result: { id: userId },
@@ -191,7 +191,7 @@ describe(IntegrityService.name, () => {
 
       await sut.deleteIntegrityReport(userId, id);
 
-      expect(storage.unlink).toHaveBeenCalledWith('/path/to/file');
+      expect(storage.deleteFile).toHaveBeenCalledWith('/path/to/file');
     });
   });
 
@@ -357,7 +357,7 @@ describe(IntegrityService.name, () => {
         path: '/path/to/existing',
       });
 
-      storage.stat.mockRejectedValueOnce(new Error('ENOENT')).mockResolvedValueOnce({} as never);
+      storage.getMetadata.mockRejectedValueOnce(new Error('ENOENT')).mockResolvedValueOnce({} as never);
 
       await sut.handleUntrackedRefresh({
         items: [
@@ -484,7 +484,7 @@ describe(IntegrityService.name, () => {
         assetId,
       });
 
-      storage.stat
+      storage.getMetadata
         .mockResolvedValueOnce({} as never)
         .mockRejectedValueOnce(new Error('ENOENT'))
         .mockResolvedValueOnce({} as never);
@@ -531,7 +531,7 @@ describe(IntegrityService.name, () => {
         path: '/path/to/restored',
       });
 
-      storage.stat
+      storage.getMetadata
         .mockResolvedValueOnce({} as never)
         .mockRejectedValueOnce(new Error('ENOENT'))
         .mockResolvedValueOnce({} as never);
@@ -951,7 +951,7 @@ describe(IntegrityService.name, () => {
       const storage = ctx.getMock(StorageRepository);
       const events = ctx.getMock(EventRepository);
 
-      storage.unlink.mockResolvedValue(void 0);
+      storage.deleteFile.mockResolvedValue(void 0);
       events.emit.mockResolvedValue(void 0);
 
       const {
@@ -1015,7 +1015,7 @@ describe(IntegrityService.name, () => {
         userId: '',
       });
 
-      expect(storage.unlink).toHaveBeenCalledWith('/path/to/untracked');
+      expect(storage.deleteFile).toHaveBeenCalledWith('/path/to/untracked');
 
       await expect(ctx.get(AssetRepository).getByIds([assetId1, assetId2, assetId3])).resolves.toEqual(
         expect.arrayContaining([

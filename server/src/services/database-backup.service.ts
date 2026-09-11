@@ -251,13 +251,13 @@ export class DatabaseBackupService {
       const fileStream = this.storageRepository.createWriteStream(temporaryFilePath);
 
       await pipeline(pgdump, gzip, fileStream);
-      await this.storageRepository.rename(temporaryFilePath, backupFilePath);
+      await this.storageRepository.publish(temporaryFilePath, backupFilePath);
     } catch (error) {
       this.logger.error(`Database Backup Failure: ${error}`);
       pgdump?.destroy();
       gzip?.destroy();
       await this.storageRepository
-        .unlink(temporaryFilePath)
+        .deleteFile(temporaryFilePath)
 
         .catch((error) => this.logger.error(`Failed to delete failed backup file: ${error}`));
       throw error;
@@ -295,7 +295,7 @@ export class DatabaseBackupService {
 
   async listBackups(): Promise<DatabaseBackupListResponseDto> {
     const backupsFolder = StorageCore.getBaseFolder(StorageFolder.Backups);
-    const files = await this.storageRepository.readdir(backupsFolder);
+    const files = await this.storageRepository.list(backupsFolder);
     const timezone = DateTime.local().zoneName;
 
     const validFiles = files
@@ -305,7 +305,7 @@ export class DatabaseBackupService {
 
     const backups = await Promise.all(
       validFiles.map(async (filename) => {
-        const stats = await this.storageRepository.stat(path.join(backupsFolder, filename));
+        const stats = await this.storageRepository.getMetadata(path.join(backupsFolder, filename));
         return { filename, filesize: stats.size, timezone };
       }),
     );
@@ -322,7 +322,7 @@ export class DatabaseBackupService {
       throw new BadRequestException('Invalid backup name!');
     }
 
-    await Promise.all(files.map((filename) => this.storageRepository.unlink(path.join(backupsFolder, filename))));
+    await Promise.all(files.map((filename) => this.storageRepository.deleteFile(path.join(backupsFolder, filename))));
   }
 
   async cleanupDatabaseBackups() {
@@ -341,7 +341,7 @@ export class DatabaseBackupService {
     );
 
     const backupsFolder = StorageCore.getBaseFolder(StorageFolder.Backups);
-    const files = await this.storageRepository.readdir(backupsFolder);
+    const files = await this.storageRepository.list(backupsFolder);
     const backups = files
       .filter((filename) => isValidDatabaseRoutineBackupName(filename))
       .toSorted()
@@ -352,7 +352,7 @@ export class DatabaseBackupService {
     toDelete.push(...failedBackups);
 
     for (const file of toDelete) {
-      await this.storageRepository.unlink(path.join(backupsFolder, file));
+      await this.storageRepository.deleteFile(path.join(backupsFolder, file));
     }
 
     this.logger.debug(`Database Backup Cleanup Finished, deleted ${toDelete.length} backups`);
@@ -371,7 +371,7 @@ export class DatabaseBackupService {
       }
 
       const backupFilePath = path.join(StorageCore.getBaseFolder(StorageFolder.Backups), filename);
-      await this.storageRepository.stat(backupFilePath); // => check file exists
+      await this.storageRepository.getMetadata(backupFilePath); // => check file exists
 
       let isPgClusterDump = false;
       const version = findDatabaseBackupVersion(filename);

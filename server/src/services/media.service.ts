@@ -315,7 +315,7 @@ export class MediaService extends BaseService {
       isProgressive: !!image.thumbnail.progressive && thumbnailFormat !== ImageFormat.Webp,
       isTransparent,
     });
-    this.storageCore.ensureFolders(previewFile.path);
+    await this.storageCore.ensureFolders(previewFile.path);
 
     // generate final images
     const baseOptions = { colorspace, processInvalidImages: false, raw: info, edits: useEdits ? asset.edits : [] };
@@ -354,7 +354,7 @@ export class MediaService extends BaseService {
         isProgressive: !!image.fullsize.progressive && image.fullsize.format !== ImageFormat.Webp,
         isTransparent,
       });
-      this.storageCore.ensureFolders(fullsizeFile.path);
+      await this.storageCore.ensureFolders(fullsizeFile.path);
 
       // Write the buffer to disk with essential EXIF data
       await this.storageRepository.createOrOverwriteFile(fullsizeFile.path, extracted.buffer);
@@ -424,7 +424,7 @@ export class MediaService extends BaseService {
     });
 
     const thumbnailPath = StorageCore.getPersonThumbnailPath({ ownerId, personGroupId });
-    this.storageCore.ensureFolders(thumbnailPath);
+    await this.storageCore.ensureFolders(thumbnailPath);
 
     const thumbnailOptions: GenerateThumbnailOptions = {
       colorspace: image.colorspace,
@@ -504,7 +504,7 @@ export class MediaService extends BaseService {
       isProgressive: false,
       isTransparent: false,
     });
-    this.storageCore.ensureFolders(previewFile.path);
+    await this.storageCore.ensureFolders(previewFile.path);
 
     const { videoStream, format } = asset;
     if (!videoStream || !format) {
@@ -553,7 +553,7 @@ export class MediaService extends BaseService {
 
     const input = asset.originalPath;
     const output = StorageCore.getEncodedVideoPath(asset);
-    this.storageCore.ensureFolders(output);
+    await this.storageCore.ensureFolders(output);
 
     const { videoStream, format } = asset;
     const audioStream = asset.audioStream ?? undefined;

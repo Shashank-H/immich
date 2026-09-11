@@ -35,7 +35,7 @@ export async function detectPriorInstall(
     storage: await Promise.all(
       Object.values(StorageFolder).map(async (folder) => {
         const path = StorageCore.getBaseFolder(folder);
-        const files = await storageRepository.readdir(path);
+        const files = await storageRepository.list(path);
         const filename = join(StorageCore.getBaseFolder(folder), '.immich');
 
         let isReadable = false,

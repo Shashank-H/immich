@@ -60,7 +60,7 @@ describe(PersonService.name, () => {
       const { user } = await ctx.newUser();
       const { person } = await ctx.newPerson({ ownerId: user.id });
       const auth = factory.auth({ user });
-      storageMock.unlink.mockResolvedValue();
+      storageMock.deleteFile.mockResolvedValue();
 
       await expect(personRepo.getByGroupId(person)).resolves.toEqual(
         expect.objectContaining({ personGroupId: person.personGroupId }),
@@ -68,7 +68,7 @@ describe(PersonService.name, () => {
       await expect(sut.delete(auth, person.personGroupId)).resolves.toBeUndefined();
       await expect(personRepo.getByGroupId(person)).resolves.toBeUndefined();
 
-      expect(storageMock.unlink).toHaveBeenCalledWith(person.thumbnailPath);
+      expect(storageMock.deleteFile).toHaveBeenCalledWith(person.thumbnailPath);
     });
   });
 
@@ -88,7 +88,7 @@ describe(PersonService.name, () => {
       const { person: person1 } = await ctx.newPerson({ ownerId: user.id });
       const { person: person2 } = await ctx.newPerson({ ownerId: user.id });
       const auth = factory.auth({ user });
-      storageMock.unlink.mockResolvedValue();
+      storageMock.deleteFile.mockResolvedValue();
 
       await expect(
         sut.deleteAll(auth, { ids: [person1.personGroupId, person2.personGroupId] }),
@@ -96,9 +96,9 @@ describe(PersonService.name, () => {
       await expect(personRepo.getByGroupId(person1)).resolves.toBeUndefined();
       await expect(personRepo.getByGroupId(person2)).resolves.toBeUndefined();
 
-      expect(storageMock.unlink).toHaveBeenCalledTimes(2);
-      expect(storageMock.unlink).toHaveBeenCalledWith(person1.thumbnailPath);
-      expect(storageMock.unlink).toHaveBeenCalledWith(person2.thumbnailPath);
+      expect(storageMock.deleteFile).toHaveBeenCalledTimes(2);
+      expect(storageMock.deleteFile).toHaveBeenCalledWith(person1.thumbnailPath);
+      expect(storageMock.deleteFile).toHaveBeenCalledWith(person2.thumbnailPath);
     });
   });
 
@@ -138,7 +138,7 @@ describe(PersonService.name, () => {
     it('should delete all people and queue faces for recognition', async () => {
       const { sut, ctx } = setup();
       const jobRepo = ctx.getMock(JobRepository);
-      ctx.getMock(StorageRepository).unlink.mockResolvedValue();
+      ctx.getMock(StorageRepository).deleteFile.mockResolvedValue();
       jobRepo.waitForQueueCompletion.mockResolvedValue();
       jobRepo.getJobCounts.mockResolvedValue({ active: 0, waiting: 0, completed: 0, delayed: 0, failed: 0, paused: 0 });
       jobRepo.queueAll.mockResolvedValue();
@@ -169,7 +169,7 @@ describe(PersonService.name, () => {
     it('should only delete all people of a specified cluster group and queue their faces for recognition', async () => {
       const { sut, ctx } = setup();
       const jobRepo = ctx.getMock(JobRepository);
-      ctx.getMock(StorageRepository).unlink.mockResolvedValue();
+      ctx.getMock(StorageRepository).deleteFile.mockResolvedValue();
       jobRepo.waitForQueueCompletion.mockResolvedValue();
       jobRepo.getJobCounts.mockResolvedValue({ active: 0, waiting: 0, completed: 0, delayed: 0, failed: 0, paused: 0 });
       jobRepo.queueAll.mockResolvedValue();
@@ -219,7 +219,7 @@ describe(PersonService.name, () => {
       });
       const { asset } = await ctx.newAsset({ ownerId: user2.id });
       await ctx.newAssetFace({ assetId: asset.id, personGroupId: person2.personGroupId });
-      storageMock.unlink.mockResolvedValue();
+      storageMock.deleteFile.mockResolvedValue();
 
       const auth = factory.auth({ user: user1 });
 
@@ -250,7 +250,7 @@ describe(PersonService.name, () => {
         personGroupId: person2.personGroupId,
         name: 'Person 2',
       });
-      storageMock.unlink.mockResolvedValue();
+      storageMock.deleteFile.mockResolvedValue();
 
       const auth = factory.auth({ user: user1 });
 
@@ -283,7 +283,7 @@ describe(PersonService.name, () => {
         personGroupId: person2.personGroupId,
         birthDate: DateTime.now().minus({ years: 2 }).toJSDate(),
       });
-      storageMock.unlink.mockResolvedValue();
+      storageMock.deleteFile.mockResolvedValue();
 
       const auth = factory.auth({ user: user1 });
 
@@ -312,7 +312,7 @@ describe(PersonService.name, () => {
       });
       const { asset } = await ctx.newAsset({ ownerId: user2.id });
       await ctx.newAssetFace({ assetId: asset.id, personGroupId: person2.personGroupId });
-      storageMock.unlink.mockResolvedValue();
+      storageMock.deleteFile.mockResolvedValue();
 
       const auth = factory.auth({ user: user1 });
 

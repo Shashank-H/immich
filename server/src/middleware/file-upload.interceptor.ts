@@ -94,7 +94,7 @@ export class FileUploadInterceptor implements NestInterceptor {
     }
   }
 
-  private handleFile(request: AuthRequest, file: Express.Multer.File, callback: Callback<Partial<ImmichFile>>) {
+  private async handleFile(request: AuthRequest, file: Express.Multer.File, callback: Callback<Partial<ImmichFile>>) {
     request.on('error', (error) => {
       if ('code' in error && error.code === 'ECONNRESET') {
         this.logger.debug('Upload was cancelled');
@@ -110,7 +110,7 @@ export class FileUploadInterceptor implements NestInterceptor {
       const uploadRequest = asUploadRequest(request, file);
 
       const path = join(
-        this.assetService.getUploadFolder(uploadRequest),
+        await this.assetService.getUploadFolder(uploadRequest),
         this.assetService.getUploadFilename(uploadRequest),
       );
 
@@ -145,7 +145,7 @@ export class FileUploadInterceptor implements NestInterceptor {
 
   private removeFile(_request: AuthRequest, file: Express.Multer.File, callback: (error: Error | null) => void) {
     this.storageRepository
-      .unlink(file.path)
+      .deleteFile(file.path)
       .then(() => callback(null))
       .catch(callback);
   }

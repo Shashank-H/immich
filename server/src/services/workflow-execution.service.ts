@@ -207,9 +207,9 @@ export class WorkflowExecutionService extends BaseService {
 
   private async importFolders(installFolder: string): Promise<void> {
     try {
-      const entries = await this.storageRepository.readdirWithTypes(installFolder);
+      const entries = await this.localFilesystemRepository.listDirectory(installFolder);
       for (const entry of entries) {
-        if (!entry.isDirectory()) {
+        if (entry.type !== 'directory') {
           continue;
         }
 
@@ -223,7 +223,7 @@ export class WorkflowExecutionService extends BaseService {
   private async importFolder(folder: string, options?: { force?: boolean }) {
     try {
       const manifestPath = join(folder, 'manifest.json');
-      const bytes = await this.storageRepository.readFile(manifestPath);
+      const bytes = await this.localFilesystemRepository.readFile(manifestPath);
       const contents = bytes.toString('utf8');
       const sha256hash = this.cryptoRepository.hashSha256(contents) as Buffer;
 
@@ -246,7 +246,7 @@ export class WorkflowExecutionService extends BaseService {
 
       const existing = await this.pluginRepository.getByName(manifest.name);
       const wasmPath = `${folder}/${manifest.wasmPath}`;
-      const wasmBytes = await this.storageRepository.readFile(wasmPath);
+      const wasmBytes = await this.localFilesystemRepository.readFile(wasmPath);
 
       const plugin = await this.pluginRepository.upsert(
         {

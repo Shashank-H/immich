@@ -1,7 +1,6 @@
 import { BinaryField, ExifDateTime } from 'exiftool-vendored';
 import { DateTime } from 'luxon';
 import { randomBytes } from 'node:crypto';
-import { Stats } from 'node:fs';
 import { defaults } from 'src/dtos/config.dto';
 import {
   AssetFileType,
@@ -169,12 +168,12 @@ describe(MetadataService.name, () => {
     beforeEach(() => {
       const time = new Date('2022-01-01T00:00:00.000Z');
       const timeMs = time.valueOf();
-      mocks.storage.stat.mockResolvedValue({
+      mocks.storage.getMetadata.mockResolvedValue({
         size: 123_456,
-        mtime: time,
-        mtimeMs: timeMs,
-        birthtimeMs: timeMs,
-      } as Stats);
+        modifiedAt: time,
+        modifiedAtMs: timeMs,
+        createdAtMs: timeMs,
+      } as any);
     });
 
     it('should handle an asset that could not be found', async () => {
@@ -217,12 +216,12 @@ describe(MetadataService.name, () => {
       const fileModifiedAt = new Date('2021-01-01T00:00:00.000Z');
       const asset = AssetFactory.create();
       mocks.assetJob.getForMetadataExtraction.mockResolvedValue(getForMetadataExtraction(asset));
-      mocks.storage.stat.mockResolvedValue({
+      mocks.storage.getMetadata.mockResolvedValue({
         size: 123_456,
-        mtime: fileModifiedAt,
-        mtimeMs: fileModifiedAt.valueOf(),
-        birthtimeMs: fileCreatedAt.valueOf(),
-      } as Stats);
+        modifiedAt: fileModifiedAt,
+        modifiedAtMs: fileModifiedAt.valueOf(),
+        createdAtMs: fileCreatedAt.valueOf(),
+      } as any);
       mockReadTags();
 
       await sut.handleMetadataExtraction({ id: asset.id });
@@ -249,12 +248,12 @@ describe(MetadataService.name, () => {
       const fileModifiedAt = new Date('2022-01-01T00:00:00.000Z');
       const asset = AssetFactory.create();
       mocks.assetJob.getForMetadataExtraction.mockResolvedValue(getForMetadataExtraction(asset));
-      mocks.storage.stat.mockResolvedValue({
+      mocks.storage.getMetadata.mockResolvedValue({
         size: 123_456,
-        mtime: fileModifiedAt,
-        mtimeMs: fileModifiedAt.valueOf(),
-        birthtimeMs: fileCreatedAt.valueOf(),
-      } as Stats);
+        modifiedAt: fileModifiedAt,
+        modifiedAtMs: fileModifiedAt.valueOf(),
+        createdAtMs: fileCreatedAt.valueOf(),
+      } as any);
       mockReadTags();
 
       await sut.handleMetadataExtraction({ id: asset.id });
@@ -302,12 +301,12 @@ describe(MetadataService.name, () => {
     it('should handle lists of numbers', async () => {
       const asset = AssetFactory.create();
       mocks.assetJob.getForMetadataExtraction.mockResolvedValue(getForMetadataExtraction(asset));
-      mocks.storage.stat.mockResolvedValue({
+      mocks.storage.getMetadata.mockResolvedValue({
         size: 123_456,
-        mtime: asset.fileModifiedAt,
-        mtimeMs: asset.fileModifiedAt.valueOf(),
-        birthtimeMs: asset.fileCreatedAt.valueOf(),
-      } as Stats);
+        modifiedAt: asset.fileModifiedAt,
+        modifiedAtMs: asset.fileModifiedAt.valueOf(),
+        createdAtMs: asset.fileCreatedAt.valueOf(),
+      } as any);
       mockReadTags({ ISO: [160] });
 
       await sut.handleMetadataExtraction({ id: asset.id });
@@ -334,12 +333,12 @@ describe(MetadataService.name, () => {
       const asset = AssetFactory.from().exif().build();
       mocks.assetJob.getForMetadataExtraction.mockResolvedValue(getForMetadataExtraction(asset));
       mocks.systemMetadata.get.mockResolvedValue({ reverseGeocoding: { enabled: false } });
-      mocks.storage.stat.mockResolvedValue({
+      mocks.storage.getMetadata.mockResolvedValue({
         size: 123_456,
-        mtime: asset.fileModifiedAt,
-        mtimeMs: asset.fileModifiedAt.valueOf(),
-        birthtimeMs: asset.fileCreatedAt.valueOf(),
-      } as Stats);
+        modifiedAt: asset.fileModifiedAt,
+        modifiedAtMs: asset.fileModifiedAt.valueOf(),
+        createdAtMs: asset.fileCreatedAt.valueOf(),
+      } as any);
       mockReadTags({
         GPSLatitude: asset.exifInfo.latitude!,
         GPSLongitude: asset.exifInfo.longitude!,
@@ -369,12 +368,12 @@ describe(MetadataService.name, () => {
       mocks.assetJob.getForMetadataExtraction.mockResolvedValue(getForMetadataExtraction(asset));
       mocks.systemMetadata.get.mockResolvedValue({ reverseGeocoding: { enabled: true } });
       mocks.map.reverseGeocode.mockResolvedValue({ city: 'City', state: 'State', country: 'Country' });
-      mocks.storage.stat.mockResolvedValue({
+      mocks.storage.getMetadata.mockResolvedValue({
         size: 123_456,
-        mtime: asset.fileModifiedAt,
-        mtimeMs: asset.fileModifiedAt.valueOf(),
-        birthtimeMs: asset.fileCreatedAt.valueOf(),
-      } as Stats);
+        modifiedAt: asset.fileModifiedAt,
+        modifiedAtMs: asset.fileModifiedAt.valueOf(),
+        createdAtMs: asset.fileCreatedAt.valueOf(),
+      } as any);
       mockReadTags({ GPSLatitude: 10, GPSLongitude: 20 });
 
       await sut.handleMetadataExtraction({ id: asset.id });
@@ -787,12 +786,12 @@ describe(MetadataService.name, () => {
       const asset = AssetFactory.create();
       const motionAsset = AssetFactory.create({ type: AssetType.Video, visibility: AssetVisibility.Hidden });
       mocks.assetJob.getForMetadataExtraction.mockResolvedValue(getForMetadataExtraction(asset));
-      mocks.storage.stat.mockResolvedValue({
+      mocks.storage.getMetadata.mockResolvedValue({
         size: 123_456,
-        mtime: asset.fileModifiedAt,
-        mtimeMs: asset.fileModifiedAt.valueOf(),
-        birthtimeMs: asset.fileCreatedAt.valueOf(),
-      } as Stats);
+        modifiedAt: asset.fileModifiedAt,
+        modifiedAtMs: asset.fileModifiedAt.valueOf(),
+        createdAtMs: asset.fileCreatedAt.valueOf(),
+      } as any);
       mockReadTags({
         Directory: 'foo/bar/',
         MotionPhoto: 1,
@@ -841,12 +840,12 @@ describe(MetadataService.name, () => {
     it('should extract the EmbeddedVideo tag from Samsung JPEG motion photos', async () => {
       const asset = AssetFactory.create();
       const motionAsset = AssetFactory.create({ type: AssetType.Video, visibility: AssetVisibility.Hidden });
-      mocks.storage.stat.mockResolvedValue({
+      mocks.storage.getMetadata.mockResolvedValue({
         size: 123_456,
-        mtime: asset.fileModifiedAt,
-        mtimeMs: asset.fileModifiedAt.valueOf(),
-        birthtimeMs: asset.fileCreatedAt.valueOf(),
-      } as Stats);
+        modifiedAt: asset.fileModifiedAt,
+        modifiedAtMs: asset.fileModifiedAt.valueOf(),
+        createdAtMs: asset.fileCreatedAt.valueOf(),
+      } as any);
       mocks.assetJob.getForMetadataExtraction.mockResolvedValue(getForMetadataExtraction(asset));
       mockReadTags({
         Directory: 'foo/bar/',
@@ -894,12 +893,12 @@ describe(MetadataService.name, () => {
       const asset = AssetFactory.create();
       const motionAsset = AssetFactory.create({ type: AssetType.Video, visibility: AssetVisibility.Hidden });
       mocks.assetJob.getForMetadataExtraction.mockResolvedValue(getForMetadataExtraction(asset));
-      mocks.storage.stat.mockResolvedValue({
+      mocks.storage.getMetadata.mockResolvedValue({
         size: 123_456,
-        mtime: asset.fileModifiedAt,
-        mtimeMs: asset.fileModifiedAt.valueOf(),
-        birthtimeMs: asset.fileCreatedAt.valueOf(),
-      } as Stats);
+        modifiedAt: asset.fileModifiedAt,
+        modifiedAtMs: asset.fileModifiedAt.valueOf(),
+        createdAtMs: asset.fileCreatedAt.valueOf(),
+      } as any);
       mockReadTags({
         Directory: 'foo/bar/',
         MotionPhoto: 1,
@@ -978,7 +977,7 @@ describe(MetadataService.name, () => {
       mocks.asset.getByChecksum.mockResolvedValue(motionAsset);
       const video = randomBytes(512);
       mocks.storage.readFile.mockResolvedValue(video);
-      mocks.storage.checkFileExists.mockResolvedValue(true);
+      mocks.storage.exists.mockResolvedValue(true);
 
       await sut.handleMetadataExtraction({ id: asset.id });
       expect(mocks.asset.create).not.toHaveBeenCalled();
@@ -1911,7 +1910,7 @@ describe(MetadataService.name, () => {
       const asset = forSidecarJob({ originalPath: '/path/to/IMG_123.jpg', files: [] });
 
       mocks.assetJob.getForSidecarCheckJob.mockResolvedValue(asset);
-      mocks.storage.checkFileExists.mockResolvedValueOnce(true);
+      mocks.storage.exists.mockResolvedValueOnce(true);
 
       await expect(sut.handleSidecarCheck({ id: asset.id })).resolves.toBe(JobStatus.Success);
 
@@ -1929,8 +1928,8 @@ describe(MetadataService.name, () => {
       });
 
       mocks.assetJob.getForSidecarCheckJob.mockResolvedValue(asset);
-      mocks.storage.checkFileExists.mockResolvedValueOnce(false);
-      mocks.storage.checkFileExists.mockResolvedValueOnce(true);
+      mocks.storage.exists.mockResolvedValueOnce(false);
+      mocks.storage.exists.mockResolvedValueOnce(true);
 
       await expect(sut.handleSidecarCheck({ id: asset.id })).resolves.toBe(JobStatus.Success);
 
@@ -1947,7 +1946,7 @@ describe(MetadataService.name, () => {
         files: [{ id: 'sidecar', path: '/path/to/IMG_123.jpg.xmp', type: AssetFileType.Sidecar, isEdited: false }],
       });
       mocks.assetJob.getForSidecarCheckJob.mockResolvedValue(asset);
-      mocks.storage.checkFileExists.mockResolvedValue(false);
+      mocks.storage.exists.mockResolvedValue(false);
 
       await expect(sut.handleSidecarCheck({ id: asset.id })).resolves.toBe(JobStatus.Success);
 
@@ -1961,7 +1960,7 @@ describe(MetadataService.name, () => {
       });
 
       mocks.assetJob.getForSidecarCheckJob.mockResolvedValue(asset);
-      mocks.storage.checkFileExists.mockResolvedValueOnce(true);
+      mocks.storage.exists.mockResolvedValueOnce(true);
 
       await expect(sut.handleSidecarCheck({ id: asset.id })).resolves.toBe(JobStatus.Skipped);
 

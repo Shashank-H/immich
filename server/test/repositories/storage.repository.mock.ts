@@ -1,6 +1,7 @@
 import { ChokidarOptions } from 'chokidar';
 import { StorageCore } from 'src/cores/storage.core';
-import { StorageRepository, WatchEvents } from 'src/repositories/storage.repository';
+import { WatchEvents } from 'src/repositories/local-filesystem.repository';
+import { StorageRepository } from 'src/repositories/storage.repository';
 import { RepositoryInterface } from 'src/types';
 import { Mocked, vitest } from 'vitest';
 
@@ -54,27 +55,22 @@ export const newStorageRepositoryMock = (): Mocked<RepositoryInterface<StorageRe
     createGunzip: vitest.fn(),
     readFile: vitest.fn(),
     readJsonFile: vitest.fn() as Mocked<StorageRepository>['readJsonFile'],
-    readdirWithTypes: vitest.fn(),
     createFile: vitest.fn(),
     createWriteStream: vitest.fn(),
     createOrOverwriteFile: vitest.fn(),
-    existsSync: vitest.fn(),
     overwriteFile: vitest.fn(),
-    unlink: vitest.fn(),
-    unlinkDir: vitest.fn().mockResolvedValue(true),
+    deleteFile: vitest.fn(),
+    deleteDirectory: vitest.fn().mockResolvedValue(true),
     removeEmptyDirs: vitest.fn(),
-    checkFileExists: vitest.fn(),
-    mkdirSync: vitest.fn(),
-    checkDiskUsage: vitest.fn(),
-    readdir: vitest.fn(),
-    realpath: vitest.fn().mockImplementation((filepath: string) => Promise.resolve(filepath)),
-    stat: vitest.fn(),
+    exists: vitest.fn(),
+    createDirectory: vitest.fn(),
+    list: vitest.fn(),
+    resolvePath: vitest.fn().mockImplementation((filepath: string) => Promise.resolve(filepath)),
+    getMetadata: vitest.fn(),
     crawl: vitest.fn(),
     walk: vitest.fn().mockImplementation(async function* () {}),
-    rename: vitest.fn(),
+    publish: vitest.fn(),
     copyFile: vitest.fn(),
-    utimes: vitest.fn(),
-    watch: vitest.fn().mockImplementation(makeMockWatcher({})),
-    watchDir: vitest.fn().mockImplementation(() => ({ close: vitest.fn(), on: vitest.fn() })),
+    setFileTimes: vitest.fn(),
   };
 };
