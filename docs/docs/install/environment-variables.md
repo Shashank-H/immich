@@ -54,6 +54,58 @@ These environment variables are used by the `docker-compose.yml` file and do **N
 
 \*3: The [default configuration](https://helmetjs.github.io/#content-security-policy) sets `upgrade-insecure-requests`, which tells the browser to upgrade all requests to HTTPS. This breaks on HTTP-only deployments. If you cannot use HTTPS, you should use a custom helmet config file with `"upgrade-insecure-requests": null`.
 
+## Media storage
+
+The filesystem backend remains the default and continues to store media below `IMMICH_MEDIA_LOCATION` (`/data` in the Docker images). Set `IMMICH_MEDIA_BACKEND=s3` to store managed media in Amazon S3 or an S3-compatible object store. All server workers must receive the same settings.
+
+| Variable                            | Description                                                                                  |    Default     |
+| :---------------------------------- | :------------------------------------------------------------------------------------------- | :------------: |
+| `IMMICH_MEDIA_BACKEND`              | Media backend: `filesystem` or `s3`                                                          |  `filesystem`  |
+| `IMMICH_S3_BUCKET`                  | Bucket name; required for the S3 backend                                                     |                |
+| `IMMICH_S3_REGION`                  | AWS signing region                                                                           |  `us-east-1`   |
+| `IMMICH_S3_ENDPOINT`                | Full custom endpoint URL; omit for AWS S3                                                    |                |
+| `IMMICH_S3_KEY_PREFIX`              | Optional relative object-key prefix, without leading/trailing slash or `.`/`..` path segments |                |
+| `IMMICH_S3_ACCESS_KEY_ID`           | Static access key ID; must be supplied with `IMMICH_S3_SECRET_ACCESS_KEY`                     |                |
+| `IMMICH_S3_SECRET_ACCESS_KEY`       | Static secret access key                                                                     |                |
+| `IMMICH_S3_SESSION_TOKEN`           | Optional session token for static temporary credentials                                      |                |
+| `IMMICH_S3_USE_DEFAULT_CREDENTIALS` | Use the AWS SDK default credential chain; cannot be combined with static credentials          | auto when keys are absent |
+| `IMMICH_S3_FORCE_PATH_STYLE`        | Use path-style rather than virtual-hosted-style bucket addressing                             |    `false`     |
+| `IMMICH_S3_TLS`                     | Require `https` (`false` is allowed only with an `http` custom endpoint)                      |     `true`     |
+| `IMMICH_S3_SERVER_SIDE_ENCRYPTION`  | Optional server-side encryption: `AES256` or `aws:kms`                                       |                |
+| `IMMICH_S3_SSE_KMS_KEY_ID`          | Optional KMS key ID; requires `IMMICH_S3_SERVER_SIDE_ENCRYPTION=aws:kms`                      |                |
+
+### Amazon S3 with an IAM role or the default credential chain
+
+Do not set static access keys when an ECS task role, EC2 instance profile, web identity token, shared AWS profile, or another default-chain source is available:
+
+```env
+IMMICH_MEDIA_BACKEND=s3
+IMMICH_S3_BUCKET=my-immich-library
+IMMICH_S3_REGION=us-east-1
+IMMICH_S3_KEY_PREFIX=production/immich
+IMMICH_S3_USE_DEFAULT_CREDENTIALS=true
+IMMICH_S3_SERVER_SIDE_ENCRYPTION=AES256
+```
+
+The container must be able to reach the applicable AWS credential provider. For example, attach an IAM task role to an ECS task rather than placing long-lived keys in the Compose file.
+
+### S3-compatible/MinIO endpoint
+
+Custom endpoints commonly require path-style addressing. The endpoint scheme and `IMMICH_S3_TLS` must agree:
+
+```env
+IMMICH_MEDIA_BACKEND=s3
+IMMICH_S3_BUCKET=immich
+IMMICH_S3_REGION=us-east-1
+IMMICH_S3_ENDPOINT=http://minio:9000
+IMMICH_S3_ACCESS_KEY_ID=minioadmin
+IMMICH_S3_SECRET_ACCESS_KEY=replace-with-a-secret
+IMMICH_S3_FORCE_PATH_STYLE=true
+IMMICH_S3_TLS=false
+```
+
+For a TLS-enabled compatible service, use an `https://` endpoint and leave `IMMICH_S3_TLS=true` (or omit it). Static credentials are treated as secrets by configuration diagnostics. Prefer a secrets manager, IAM/default-chain authentication, or the `_FILE` mechanisms described below instead of committing credentials.
+
 ## Workers
 
 | Variable                 | Description                                                                                          | Default | Containers |
@@ -213,14 +265,17 @@ The following variables support reading from files, either via [Systemd Credenti
 
 To use any of these, either set `CREDENTIALS_DIRECTORY` to a directory that contains files whose name is the “regular variable” name, and whose content is the secret. If using Docker Secrets, setting `CREDENTIALS_DIRECTORY=/run/secrets` will cause all secrets present to be used. Alternatively, replace the regular variable with the equivalent `_FILE` environment variable as below. The value of the `_FILE` variable should be set to the path of a file containing the variable value.
 
-| Regular Variable   | Equivalent Docker Secrets '\_FILE' Variable |
-| :----------------- | :------------------------------------------ |
-| `DB_HOSTNAME`      | `DB_HOSTNAME_FILE`<sup>\*1</sup>            |
-| `DB_DATABASE_NAME` | `DB_DATABASE_NAME_FILE`<sup>\*1</sup>       |
-| `DB_USERNAME`      | `DB_USERNAME_FILE`<sup>\*1</sup>            |
-| `DB_PASSWORD`      | `DB_PASSWORD_FILE`<sup>\*1</sup>            |
-| `DB_URL`           | `DB_URL_FILE`<sup>\*1</sup>                 |
-| `REDIS_PASSWORD`   | `REDIS_PASSWORD_FILE`<sup>\*2</sup>         |
+| Regular Variable                    | Equivalent Docker Secrets '\_FILE' Variable |
+| :---------------------------------- | :------------------------------------------ |
+| `DB_HOSTNAME`                       | `DB_HOSTNAME_FILE`<sup>\*1</sup>            |
+| `DB_DATABASE_NAME`                  | `DB_DATABASE_NAME_FILE`<sup>\*1</sup>       |
+| `DB_USERNAME`                       | `DB_USERNAME_FILE`<sup>\*1</sup>            |
+| `DB_PASSWORD`                       | `DB_PASSWORD_FILE`<sup>\*1</sup>            |
+| `DB_URL`                            | `DB_URL_FILE`<sup>\*1</sup>                 |
+| `REDIS_PASSWORD`                    | `REDIS_PASSWORD_FILE`<sup>\*2</sup>         |
+| `IMMICH_S3_ACCESS_KEY_ID`           | `IMMICH_S3_ACCESS_KEY_ID_FILE`               |
+| `IMMICH_S3_SECRET_ACCESS_KEY`       | `IMMICH_S3_SECRET_ACCESS_KEY_FILE`           |
+| `IMMICH_S3_SESSION_TOKEN`           | `IMMICH_S3_SESSION_TOKEN_FILE`               |
 
 \*1: See the [official documentation][docker-secrets-docs] for
 details on how to use Docker Secrets in the Postgres image.

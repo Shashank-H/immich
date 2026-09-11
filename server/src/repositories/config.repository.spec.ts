@@ -16,6 +16,19 @@ const resetEnv = () => {
     'IMMICH_TRUSTED_PROXIES',
     'IMMICH_API_METRICS_PORT',
     'IMMICH_MEDIA_LOCATION',
+    'IMMICH_MEDIA_BACKEND',
+    'IMMICH_S3_BUCKET',
+    'IMMICH_S3_REGION',
+    'IMMICH_S3_ENDPOINT',
+    'IMMICH_S3_KEY_PREFIX',
+    'IMMICH_S3_ACCESS_KEY_ID',
+    'IMMICH_S3_SECRET_ACCESS_KEY',
+    'IMMICH_S3_SESSION_TOKEN',
+    'IMMICH_S3_USE_DEFAULT_CREDENTIALS',
+    'IMMICH_S3_FORCE_PATH_STYLE',
+    'IMMICH_S3_TLS',
+    'IMMICH_S3_SERVER_SIDE_ENCRYPTION',
+    'IMMICH_S3_SSE_KMS_KEY_ID',
     'IMMICH_MICROSERVICES_METRICS_PORT',
     'IMMICH_TELEMETRY_INCLUDE',
     'IMMICH_TELEMETRY_EXCLUDE',
@@ -86,6 +99,63 @@ describe('getEnv', () => {
     it('should throw an error for relative paths', () => {
       process.env.IMMICH_MEDIA_LOCATION = './relative/path';
       expect(() => getEnv()).toThrowError('[IMMICH_MEDIA_LOCATION] Must be an absolute path');
+    });
+  });
+
+  describe('media storage backend', () => {
+    it('defaults to filesystem storage', () => {
+      expect(getEnv().storage).toMatchObject({ backend: 'filesystem' });
+    });
+
+    it('configures S3 with the default credential chain', () => {
+      process.env.IMMICH_MEDIA_BACKEND = 's3';
+      process.env.IMMICH_S3_BUCKET = 'photos';
+      process.env.IMMICH_S3_USE_DEFAULT_CREDENTIALS = 'true';
+      expect(getEnv().storage).toEqual({
+        backend: 's3',
+        ignoreMountCheckErrors: false,
+        mediaLocation: undefined,
+        s3: {
+          bucket: 'photos',
+          region: 'us-east-1',
+          endpoint: undefined,
+          keyPrefix: '',
+          forcePathStyle: false,
+          credentials: undefined,
+          serverSideEncryption: undefined,
+          sseKmsKeyId: undefined,
+        },
+      });
+    });
+
+    it('keeps static credentials out of serialized diagnostics', () => {
+      process.env.IMMICH_MEDIA_BACKEND = 's3';
+      process.env.IMMICH_S3_BUCKET = 'photos';
+      process.env.IMMICH_S3_ACCESS_KEY_ID = 'access-secret';
+      process.env.IMMICH_S3_SECRET_ACCESS_KEY = 'very-secret';
+      const credentials = getEnv().storage.s3!.credentials!;
+      expect(credentials.accessKeyId).toBe('access-secret');
+      expect(JSON.stringify(getEnv().storage)).not.toContain('secret');
+    });
+
+    it.each([
+      [{ IMMICH_MEDIA_BACKEND: 's3' }, 'IMMICH_S3_BUCKET'],
+      [
+        { IMMICH_MEDIA_BACKEND: 's3', IMMICH_S3_BUCKET: 'photos', IMMICH_S3_KEY_PREFIX: '/absolute' },
+        'IMMICH_S3_KEY_PREFIX',
+      ],
+      [
+        { IMMICH_MEDIA_BACKEND: 's3', IMMICH_S3_BUCKET: 'photos', IMMICH_S3_ACCESS_KEY_ID: 'only-one' },
+        'IMMICH_S3_ACCESS_KEY_ID',
+      ],
+      [
+        { IMMICH_MEDIA_BACKEND: 's3', IMMICH_S3_BUCKET: 'photos', IMMICH_S3_ENDPOINT: 'http://minio:9000' },
+        'IMMICH_S3_ENDPOINT',
+      ],
+      [{ IMMICH_MEDIA_BACKEND: 's3', IMMICH_S3_BUCKET: 'photos', IMMICH_S3_TLS: 'false' }, 'IMMICH_S3_TLS'],
+    ])('rejects invalid S3 settings %#', (environment, field) => {
+      Object.assign(process.env, environment);
+      expect(() => getEnv()).toThrow(`[${field}]`);
     });
   });
 

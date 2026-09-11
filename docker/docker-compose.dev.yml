@@ -71,6 +71,7 @@ services:
       target: dev
     restart: unless-stopped
     volumes:
+      # Used by the default filesystem backend; optional when IMMICH_MEDIA_BACKEND=s3.
       - ${UPLOAD_LOCATION}/photos:/data
       - /etc/localtime:/etc/localtime:ro
       - ../packages/plugin-core:/build/plugins/immich-plugin-core
