@@ -19,6 +19,15 @@ const absolutePath = z.string().regex(/^\//, 'Must be an absolute path').optiona
  * @docs https://zod.dev/api?id=stringbool
  */
 const stringBool = z.stringbool();
+const secret = z.string().min(1).meta({ secret: true });
+const s3Prefix = z
+  .string()
+  .trim()
+  .regex(
+    /^(?!\/)(?!.*(?:^|\/)\.\.?\/)(?!.*\/\/)[^\\]*?(?<!\/$)/,
+    'Must be a relative key prefix without empty, dot, or parent segments',
+  )
+  .optional();
 
 const trustedProxiesSchema = z
   .string()
@@ -50,6 +59,19 @@ export const EnvSchema = z
     IMMICH_LOG_LEVEL: LogLevelSchema.optional(),
     IMMICH_LOG_FORMAT: LogFormatSchema.optional(),
     IMMICH_MEDIA_LOCATION: absolutePath,
+    IMMICH_MEDIA_BACKEND: z.enum(['filesystem', 's3']).optional(),
+    IMMICH_S3_BUCKET: z.string().trim().min(1).optional(),
+    IMMICH_S3_REGION: z.string().trim().min(1).optional(),
+    IMMICH_S3_ENDPOINT: z.url().optional(),
+    IMMICH_S3_KEY_PREFIX: s3Prefix,
+    IMMICH_S3_ACCESS_KEY_ID: secret.optional(),
+    IMMICH_S3_SECRET_ACCESS_KEY: secret.optional(),
+    IMMICH_S3_SESSION_TOKEN: secret.optional(),
+    IMMICH_S3_USE_DEFAULT_CREDENTIALS: stringBool.optional(),
+    IMMICH_S3_FORCE_PATH_STYLE: stringBool.optional(),
+    IMMICH_S3_TLS: stringBool.optional(),
+    IMMICH_S3_SERVER_SIDE_ENCRYPTION: z.enum(['AES256', 'aws:kms']).optional(),
+    IMMICH_S3_SSE_KMS_KEY_ID: z.string().trim().min(1).optional(),
     IMMICH_MICROSERVICES_METRICS_PORT: z.coerce.number().int().optional(),
     IMMICH_ALLOW_EXTERNAL_PLUGINS: stringBool.optional(),
     IMMICH_PLUGINS_INSTALL_FOLDER: absolutePath,
@@ -86,5 +108,75 @@ export const EnvSchema = z
     REDIS_PASSWORD: z.string().optional(),
     REDIS_SOCKET: z.string().optional(),
     REDIS_URL: z.string().optional(),
+  })
+  .superRefine((env, ctx) => {
+    if (env.IMMICH_MEDIA_BACKEND !== 's3') {
+      return;
+    }
+    if (!env.IMMICH_S3_BUCKET) {
+      ctx.addIssue({ code: 'custom', path: ['IMMICH_S3_BUCKET'], message: 'Required when IMMICH_MEDIA_BACKEND=s3' });
+    }
+    const hasAccessKey = !!env.IMMICH_S3_ACCESS_KEY_ID;
+    const hasSecretKey = !!env.IMMICH_S3_SECRET_ACCESS_KEY;
+    if (hasAccessKey !== hasSecretKey) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['IMMICH_S3_ACCESS_KEY_ID'],
+        message: 'Access key ID and secret access key must be provided together',
+      });
+    }
+    if (env.IMMICH_S3_SESSION_TOKEN && !hasAccessKey) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['IMMICH_S3_SESSION_TOKEN'],
+        message: 'A session token requires static access key credentials',
+      });
+    }
+    if (env.IMMICH_S3_USE_DEFAULT_CREDENTIALS === true && hasAccessKey) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['IMMICH_S3_USE_DEFAULT_CREDENTIALS'],
+        message: 'Default credential chain cannot be combined with static credentials',
+      });
+    }
+    if (env.IMMICH_S3_USE_DEFAULT_CREDENTIALS === false && !hasAccessKey) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['IMMICH_S3_ACCESS_KEY_ID'],
+        message: 'Static credentials are required when the default credential chain is disabled',
+      });
+    }
+    if (env.IMMICH_S3_ENDPOINT) {
+      const endpoint = new URL(env.IMMICH_S3_ENDPOINT);
+      const protocol = endpoint.protocol;
+      const tls = env.IMMICH_S3_TLS ?? true;
+      if ((tls && protocol !== 'https:') || (!tls && protocol !== 'http:')) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['IMMICH_S3_ENDPOINT'],
+          message: `Endpoint protocol must be ${tls ? 'https' : 'http'} when IMMICH_S3_TLS=${tls}`,
+        });
+      }
+      if (endpoint.username || endpoint.password) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['IMMICH_S3_ENDPOINT'],
+          message: 'Endpoint URL must not contain credentials',
+        });
+      }
+    } else if (env.IMMICH_S3_TLS === false) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['IMMICH_S3_TLS'],
+        message: 'TLS can only be disabled for a custom endpoint',
+      });
+    }
+    if (env.IMMICH_S3_SSE_KMS_KEY_ID && env.IMMICH_S3_SERVER_SIDE_ENCRYPTION !== 'aws:kms') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['IMMICH_S3_SSE_KMS_KEY_ID'],
+        message: 'A KMS key requires IMMICH_S3_SERVER_SIDE_ENCRYPTION=aws:kms',
+      });
+    }
   })
   .meta({ id: 'EnvDto' });

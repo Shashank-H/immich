@@ -112,8 +112,19 @@ export interface EnvData {
   };
 
   storage: {
+    backend: 'filesystem' | 's3';
     ignoreMountCheckErrors: boolean;
     mediaLocation?: string;
+    s3?: {
+      bucket: string;
+      region: string;
+      endpoint?: string;
+      keyPrefix: string;
+      forcePathStyle: boolean;
+      credentials?: { accessKeyId: string; secretAccessKey: string; sessionToken?: string };
+      serverSideEncryption?: 'AES256' | 'aws:kms';
+      sseKmsKeyId?: string;
+    };
   };
 
   workers: ImmichWorker[];
@@ -168,6 +179,16 @@ const resolveHelmetFile = (helmetFile: 'true' | 'false' | string | undefined) =>
   } catch (error) {
     throw new Error(`Failed to read helmet file: ${helmetFile}`, { cause: error });
   }
+};
+
+const secretCredentials = (accessKeyId: string, secretAccessKey: string, sessionToken?: string) => {
+  const credentials = {} as { accessKeyId: string; secretAccessKey: string; sessionToken?: string };
+  Object.defineProperties(credentials, {
+    accessKeyId: { value: accessKeyId, enumerable: false },
+    secretAccessKey: { value: secretAccessKey, enumerable: false },
+    sessionToken: { value: sessionToken, enumerable: false },
+  });
+  return credentials;
 };
 
 const getEnv = (): EnvData => {
@@ -356,8 +377,28 @@ const getEnv = (): EnvData => {
     },
 
     storage: {
+      backend: dto.IMMICH_MEDIA_BACKEND ?? 'filesystem',
       ignoreMountCheckErrors: !!dto.IMMICH_IGNORE_MOUNT_CHECK_ERRORS,
       mediaLocation: dto.IMMICH_MEDIA_LOCATION,
+      s3:
+        dto.IMMICH_MEDIA_BACKEND === 's3'
+          ? {
+              bucket: dto.IMMICH_S3_BUCKET!,
+              region: dto.IMMICH_S3_REGION ?? 'us-east-1',
+              endpoint: dto.IMMICH_S3_ENDPOINT,
+              keyPrefix: dto.IMMICH_S3_KEY_PREFIX ?? '',
+              forcePathStyle: dto.IMMICH_S3_FORCE_PATH_STYLE ?? false,
+              credentials: dto.IMMICH_S3_ACCESS_KEY_ID
+                ? secretCredentials(
+                    dto.IMMICH_S3_ACCESS_KEY_ID,
+                    dto.IMMICH_S3_SECRET_ACCESS_KEY!,
+                    dto.IMMICH_S3_SESSION_TOKEN,
+                  )
+                : undefined,
+              serverSideEncryption: dto.IMMICH_S3_SERVER_SIDE_ENCRYPTION,
+              sseKmsKeyId: dto.IMMICH_S3_SSE_KMS_KEY_ID,
+            }
+          : undefined,
     },
 
     telemetry: {
